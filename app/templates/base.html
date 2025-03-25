@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styleAlert.css')}}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.png')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css')}}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-minimal@5/minimal.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">  
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+
+    <title>MotoRush | {% block title %}{% endblock %}</title>
+</head>
+<body class="bg-[#f9f9f9]">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {% if category == 'error' %}
+               <div id="flash" class="flash-message slide-in" role="alert">
+                     <svg class="flash-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                     </svg>
+                     <div class="message-container">
+                        <span class="message">Advertencia:</span> {{ message }}
+                     </div>
+                     <button onclick="closeFlash()" class="flash-close">&times;</button>
+               </div>
+            {% elif category == 'success' %}
+               <div id="flash" class="flash-message-success slide-in" role="alert">
+                     <svg class="flash-icon-success" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z"/>
+                     </svg>
+                     <div class="message-container-success">
+                        <span class="message-success">Éxito:</span> {{ message }}
+                     </div>
+                     <button onclick="closeFlash()" class="flash-close-success">&times;</button>
+               </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 ">
+    <div class="px-3 py-3 lg:px-5 lg:pl-3">
+       <div class="flex items-center justify-between">
+          <div class="flex items-center justify-start rtl:justify-end">
+             <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar"
+                type="button"
+                class="inline-flex items-center p-2 text-sm rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 text-gray-400">
+                <span class="sr-only">Open sidebar</span>
+                <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
+                   xmlns="http://www.w3.org/2000/svg">
+                   <path clip-rule="evenodd" fill-rule="evenodd"
+                      d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
+                   </path>
+                </svg>
+             </button>
+             <a href="{% if session['user_role'] == 'admin' %}
+                        {{ url_for('admin_dashboard') }}
+                     {% elif session['user_role'] == 'cliente' %}
+                        {{ url_for('cliente_dashboard') }}
+                     {% elif session['user_role'] == 'motorizado' %}
+                        {{ url_for('motorizado_dashboard') }}
+                     {% else %}
+                        {{ url_for('login') }}
+                     {% endif %}" 
+                class="flex cursor-pointer items-center justify-center">
+                <img src="{{ url_for('static', filename='img/logo.png')}}" alt="logo" class="h-10 w-10 object-cover">
+                <span class="text-xl text-[#F49A13] font-bold logo_title p-2">MotoRush</span>
+            </a>
+          </div>
+          <div class="flex items-center">
+             <div class="flex items-center ms-3">
+                <div>
+                   <button type="button"
+                      class="flex text-sm rounded-full ring-2 ring-[#F49A13]"
+                      aria-expanded="false" data-dropdown-toggle="dropdown-user">
+                      <span class="sr-only">Open user menu</span>
+                      <img class="w-10 h-10 rounded-full object-contain object-cover" src="{{ url_for('static', filename='uploads/' + user['photo']) }}" alt="Foto de perfil" class="rounded-full w-32 h-32">
+
+                   </button>
+                </div>
+                <div
+                   class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm divide-gray-600"
+                   id="dropdown-user">
+                   <div class="px-4 py-3" role="none">
+                      <p class="text-sm text-gray-900" role="none">
+                         Neil Sims
+                      </p>
+                      <p class="text-sm font-medium text-gray-900 truncate text-gray-300" role="none">
+                         neil.sims@flowbite.com
+                      </p>
+                   </div>
+                   <ul class="py-1" role="none">
+                      <li>
+                         <a href="#"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
+                            role="menuitem">Dashboard</a>
+                      </li>
+                      <li>
+                         <a href="#"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
+                            role="menuitem">Settings</a>
+                      </li>
+                      <li>
+                         <a href="#"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
+                            role="menuitem">Earnings</a>
+                      </li>
+                      <li>
+                         <a href="#"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
+                            role="menuitem">Sign out</a>
+                      </li>
+                   </ul>
+                </div>
+             </div>
+          </div>
+       </div>
+    </div>
+ </nav>
+ 
+ <aside id="logo-sidebar"
+    class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 "
+    aria-label="Sidebar">
+    <div class="h-full px-3 pb-4 overflow-y-auto bg-white">
+       <ul class="space-y-2 font-medium">
+          <li>
+             <a href="{{ url_for('admin_dashboard') }}"
+                class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                <svg
+                   class="w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
+                   aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21">
+                   <path
+                      d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z" />
+                   <path
+                      d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z" />
+                </svg>
+                <span class="ms-3">Dashboard</span>
+             </a>
+          </li>
+          <li>
+             <a href="{{ url_for('admin_category') }}"
+                class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                <svg
+                  class="shrink-0 w-5 h-5 transition duration-75 text-black group-hover:text-gray-900"
+                  viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zm10 10h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1zM17 3c-2.206 0-4 1.794-4 4s1.794 4 4 4 4-1.794 4-4-1.794-4-4-4zM7 13c-2.206 0-4 1.794-4 4s1.794 4 4 4 4-1.794 4-4-1.794-4-4-4z" fill="currentColor"/>
+               </svg>
+            
+
+                <span class="flex-1 ms-3 whitespace-nowrap">Categoria</span>
+             </a>
+          </li>
+          <li>
+             <a href="{{ url_for('admin_orders') }}"
+                class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                <svg
+                   class="shrink-0 w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
+                   aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
+                   <path
+                      d="M17 5.923A1 1 0 0 0 16 5h-3V4a4 4 0 1 0-8 0v1H2a1 1 0 0 0-1 .923L.086 17.846A2 2 0 0 0 2.08 20h13.84a2 2 0 0 0 1.994-2.153L17 5.923ZM7 9a1 1 0 0 1-2 0V7h2v2Zm0-5a2 2 0 1 1 4 0v1H7V4Zm6 5a1 1 0 1 1-2 0V7h2v2Z" />
+                </svg>
+                <span class="flex-1 ms-3 whitespace-nowrap">Pedidos</span>
+             </a>
+          </li>
+          {% if session.get('user_role') == 'admin' %}
+            <li>
+               <a href="{{ url_for('admin_users') }}"
+                  class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                  <svg
+                     class="shrink-0 w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
+                     aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+                     <path
+                        d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z" />
+                  </svg>
+                  <span class="flex-1 ms-3 whitespace-nowrap">Users</span>
+               </a>
+            </li>
+         {% endif %}
+          <li>
+             <a href="{{ url_for('logout') }}"
+                class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                <svg
+                   class="shrink-0 w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
+                   aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 16">
+                   <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M1 8h11m0 0L8 4m4 4-4 4m4-11h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3" />
+                </svg>
+                <span class="flex-1 ms-3 whitespace-nowrap">Sign In</span>
+             </a>
+          </li>
+       </ul>
+    </div>
+ </aside>
+ 
+
+{% block content %}
+{% endblock %}
+    
+   <script src="{{ url_for('static', filename='js/script.js')}}"></script>
+   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+   <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+   <script src="/socket.io/socket.io.js"></script>
+{% block scripts %}
+{% endblock %}
+
+
+
+
+</body>
+</html>
+

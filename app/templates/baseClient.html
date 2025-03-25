@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styleAlert.css')}}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.png')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cliente.css')}}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-minimal@5/minimal.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">  
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />  
+    <title>MotoRush | {% block title %}{% endblock %}</title>
+</head>
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category == 'error' %}
+                <div id="flash" class="flash-message slide-in" role="alert">
+                        <svg class="flash-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                        </svg>
+                        <div class="message-container">
+                            <span class="message">Advertencia:</span> {{ message }}
+                        </div>
+                        <button onclick="closeFlash()" class="flash-close">&times;</button>
+                </div>
+                {% elif category == 'success' %}
+                <div id="flash" class="flash-message-success slide-in" role="alert">
+                        <svg class="flash-icon-success" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z"/>
+                        </svg>
+                        <div class="message-container-success">
+                            <span class="message-success">Éxito:</span> {{ message }}
+                        </div>
+                        <button onclick="closeFlash()" class="flash-close-success">&times;</button>
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/" class="flex items-center space-x-2">
+                            <img src="{{ url_for('static', filename='img/logo.png')}}" alt="logo" class="h-10 w-10 object-cover">
+                            <span class="text-xl font-bold text-[#F49A13] bg-clip-text">MotoRush</span>
+                        </a>
+                    </div>
+                    {% if request.path != "/carrito" %}
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <a href="#" class="inline-flex items-center px-1 pt-1 text-sm font-medium brand-color border-b-2 brand-border">
+                            Todos
+                        </a>
+                        <a href="#" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-orange-500 hover:border-b-2 hover:border-orange-500">
+                            Categorias
+                        </a>
+                        <a href="{{ url_for('client_orders') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-orange-500 hover:border-b-2 hover:border-orange-500">
+                            Mis pedidos
+                        </a>
+                    </div>
+                    {% endif %}
+
+                </div>
+                <div class="relative ml-4 flex items-center">
+                    {% if request.path != "/carrito" %}
+                    <div class="relative">
+                        <input type="text" placeholder="Buscar productos..." class="pr-10 pl-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <button class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </button>
+                    </div>
+                    <div class="cart-container">
+                        <a href="{{ url_for('cart_client')}}" id="cartIcon" class="flex items-center w-8 h-8 p-2 rounded-full hover:bg-gray-100 relative ml-2">
+                            <i class="fas fa-shopping-cart text-gray-600"></i>
+                            <span id="cart-counter" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 brand-bg rounded-full">
+                                {{ cart_count if cart_count is defined else 0 }}
+                            </span>
+                        </a>
+                    </div>
+                    {% endif %}
+                    <a href="{{ url_for('logout')}}" class="flex items-center w-8 h-8 p-2 rounded-full hover:bg-gray-100 ml-2">
+                        <i class="fa-solid fa-arrow-right-from-bracket text-gray-600"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}
+    {% endblock %}
+    
+    <script src="{{ url_for('static', filename='js/script.js')}}"></script>
+    <script src="{{ url_for('static', filename='js/cliente.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.add-to-cart-form').forEach(form => {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    
+                    const productId = this.querySelector('input[name="product_id"]').value;
+    
+                    fetch("{{ url_for('add_to_cart') }}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ product_id: productId, quantity: 1 }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Respuesta del servidor:", data);
+                        updateCartCounter(data.cart_count);
+                        //alert(data.message);
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        //alert("Error al agregar al carrito");
+                    });
+                });
+            });
+        });
+        
+        function updateCartCounter(count) {
+            const counter = document.getElementById('cart-counter');
+            if (counter) {
+                counter.textContent = count;
+                console.log("Contador actualizado a:", count);
+            }
+        }
+    </script>
+    
+</body>
+</html>

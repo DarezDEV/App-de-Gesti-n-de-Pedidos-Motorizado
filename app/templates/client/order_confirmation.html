@@ -1,0 +1,130 @@
+{% extends 'baseClient.html' %}
+
+{% block title %}Confirmación de pedido{% endblock %}
+
+{% block content %}
+<!-- Contenido principal -->
+<main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center text-sm text-gray-500 mb-6 space-x-2">
+        <a href="{{ url_for('cliente_dashboard') }}" class="hover:text-gray-900 transition-colors">Inicio</a>
+        <i class="fas fa-chevron-right text-xs text-gray-300"></i>
+        <a href="{{ url_for('cart_client') }}" class="hover:text-gray-900 transition-colors">Carrito</a>
+        <i class="fas fa-chevron-right text-xs text-gray-300"></i>
+        <span class="font-medium text-gray-900">Confirmación</span>
+    </nav>
+
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Pedido confirmado</h1>
+                    <p class="text-gray-600 mt-1">Pedido #{{ order.id }}</p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-check-circle mr-1"></i> Pendiente
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Detalles de entrega -->
+                <div>
+                    <h2 class="text-lg font-semibold mb-3">Detalles de entrega</h2>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-map-marker-alt text-gray-400 mt-1 mr-3"></i>
+                            <div>
+                                <h3 class="font-medium">Dirección de entrega</h3>
+                                <p class="text-gray-600 text-sm mt-1">{{ order.address }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles de pago -->
+                <div>
+                    <h2 class="text-lg font-semibold mb-3">Detalles de pago</h2>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-start mb-3">
+                            <i class="fas fa-money-bill text-gray-400 mt-1 mr-3"></i>
+                            <div>
+                                <h3 class="font-medium">Método de pago</h3>
+                                <p class="text-gray-600 text-sm mt-1">Efectivo contra entrega</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-coins text-gray-400 mt-1 mr-3"></i>
+                            <div>
+                                <h3 class="font-medium">Detalles</h3>
+                                <div class="text-gray-600 text-sm mt-1">
+                                    <p>Total: RD${{ order.total_amount }}</p>
+                                    <p>Pagará con: RD${{ order.payment_amount }}</p>
+                                    <p>Cambio: RD${{ order.change }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Productos -->
+            <div class="mt-8">
+                <h2 class="text-lg font-semibold mb-4">Productos</h2>
+                <div class="bg-gray-50 rounded-lg">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                {% for item in order['items'] %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10">
+                                                <img class="h-10 w-10 rounded-md object-cover" src="{{ url_for('static', filename='uploads/' + item.image) }}" alt="{{ item.name }}">
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">{{ item.name }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{{ item.quantity }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">RD${{ item.price }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">RD${{ (item.price * item.quantity)|float }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="px-6 py-4 text-right text-sm font-medium text-gray-900">Total:</td>
+                                    <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">RD${{ order.total_amount }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón de cancelar pedido -->
+            <div class="mt-8 flex justify-center">
+                <form action="{{ url_for('cancel_order') }}" method="POST" onsubmit="return confirm('¿Estás seguro que deseas cancelar este pedido?')">
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <button type="submit" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                        <i class="fas fa-times-circle mr-2"></i> Cancelar pedido
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

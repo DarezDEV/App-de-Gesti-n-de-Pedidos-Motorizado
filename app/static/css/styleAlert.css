@@ -1,0 +1,138 @@
+.flash-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-right: 10px;
+    font-size: 14px;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    background-color: #fef2f2e5;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    z-index: 1000;
+    cursor: pointer;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.5s ease-out forwards;
+}
+
+.slide-out {
+    animation: slideOut 0.5s ease-out forwards;
+}
+
+
+.flash-icon {
+    width: 20px;
+    height: 20px;
+    fill: #dc2626;
+    margin-right: 8px;
+}
+
+.flash-close {
+    margin-left: 12px;
+    color: #dc2626;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    outline: none;
+}
+
+.flash-close:hover {
+    color: #7f1d1d;
+}
+
+.message-container {
+    font-weight: 400;
+    color: #dd2626d5;
+}
+
+.message {
+    font-weight: 500;
+    color: #dc2626;;
+}
+
+
+
+
+.flash-message-success {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-right: 10px;
+    font-size: 14px;
+    color: #2a991b;
+    border: 1px solid #ccfca5;
+    border-radius: 8px;
+    background-color: #f5fef2e5;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    z-index: 1000;
+    cursor: pointer;
+}
+
+
+.flash-icon-success {
+    width: 20px;
+    height: 20px;
+    fill: #60dc26;
+    margin-right: 8px;
+}
+
+.flash-close-success {
+    margin-left: 12px;
+    color: #69dc26;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    outline: none;
+}
+
+.flash-close-success:hover {
+    color: #347f1d;
+}
+
+.message-container-success {
+    font-weight: 400;
+    color: #35dd26d5;
+}
+
+.message-success {
+    font-weight: 500;
+    color: #4adc26;;
+}

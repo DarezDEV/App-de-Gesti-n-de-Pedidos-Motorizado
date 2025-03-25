@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <section class="flex items-center justify-center h-[100vh] p-16 bg-gray-50 text-gray-800">
+        <div class="container flex justify-center flex-col items-center justify-center px-5 mx-auto my-8">
+            <div class="max-w-md text-center">
+                <h2 class="mb-8 font-extrabold text-9xl text-gray-400">
+                    <span class="sr-only">Error</span>404
+                </h2>
+                {% if session['user_role'] == 'cliente' %}
+                <p class="text-2xl font-semibold md:text-3xl">Lo sentimos, no pudimos encontrar esta página.</p>
+                <p class="mt-4 mb-8 text-gray-600">Pero no te preocupes, en nuestra página de inicio podrás encontrar muchas más cosas.</p>
+                {% elif session['user_role'] == 'admin' and 'motorizado' %}
+                <p class="text-2xl font-semibold md:text-3xl">Tu eres {{ session['user_role'] }}.</p>
+                <p class="mt-4 mb-8 text-gray-600">No puedes andar ponido rutas a lo loco.</p>
+                {% else %}
+                <p class="text-2xl font-semibold md:text-3xl">Lo sentimos, no pudimos encontrar esta página.</p>
+                <p class="mt-4 mb-8 text-gray-600">Pero no te preocupes, si inicia sesión  podrás encontrar muchas más cosas.</p>
+                {% endif %}
+
+                {% if session['user_role'] %}
+                    <a 
+                    href="
+                    {% if session['user_role'] == 'admin' %}
+                        {{ url_for('admin_dashboard') }}
+                    {% elif session['user_role'] == 'cliente' %}
+                        {{ url_for('cliente_dashboard') }}
+                    {% elif session['user_role'] == 'motorizado' %}
+                        {{ url_for('motorizado_dashboard') }}
+                    {% else %}
+                        {{ url_for('login') }}
+                    {% endif %}"
+                        class="px-8 py-3 font-semibold rounded bg-[#F49A13] hover:bg-[#e88b10] text-gray-50 rounded-lg transition-colors duration-200">
+                        Ir a la página de inicio
+                    </a>
+                {% else %}
+                    <a 
+                        href="{{ url_for('login') }}" 
+                        class="px-8 py-3 font-semibold rounded bg-[#F49A13] hover:bg-[#e88b10] text-gray-50 rounded-lg transition-colors duration-200">
+                        Iniciar sesión
+                    </a>
+                {% endif %}
+                
+            </div>
+        </div>
+    </section>
+</body>
+</html>

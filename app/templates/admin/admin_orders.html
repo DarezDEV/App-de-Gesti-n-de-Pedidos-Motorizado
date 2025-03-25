@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Pedidos{% endblock %}
+{% block content %}
+<main class="flex flex-col sm:ml-64 p-3 sm:p-6">
+  <div class="container mx-auto max-w-4xl">
+    <h1 class="text-xl sm:text-2xl font-bold text-center text-primary mb-4 sm:mb-8">Gestión de Pedidos</h1>
+   
+    <div class="bg-white rounded-t-lg shadow-md mb-1">
+      <div class="relative tab-container">
+        <div class="tab-scroll flex justify-center border-b overflow-x-auto pb-1 touch-pan-x">
+          <button id="tab-todos" class="tab-btn py-2 px-2 sm:px-5 font-medium text-primary hover:text-primary-600 text-sm sm:text-base whitespace-nowrap">Todos</button>
+          <button id="tab-pendiente" class="tab-btn py-2 px-2 sm:px-5 font-medium text-gray-500 hover:text-primary-600 text-sm sm:text-base whitespace-nowrap">Pendiente</button>
+          <button id="tab-en-camino" class="tab-btn py-2 px-2 sm:px-5 font-medium text-gray-500 hover:text-primary-600 text-sm sm:text-base whitespace-nowrap">En Camino</button>
+          <button id="tab-entregado" class="tab-btn py-2 px-2 sm:px-5 font-medium text-gray-500 hover:text-primary-600 text-sm sm:text-base whitespace-nowrap">Entregado</button>
+          <div class="tab-indicator"></div>
+        </div>
+      </div>
+    </div>
+   
+    <div class="px-3 py-2 mb-3 sm:mb-6">
+      <p id="contador" class="text-gray-600 text-sm sm:text-base">Mostrando todos los pedidos <span class="font-bold">{{ orders|length }}</span></p>
+    </div>
+   
+    <div id="tab-content" class="tab-content space-y-3 sm:space-y-4">
+      {% for order in orders %}
+      <div class="pedido bg-white rounded-lg shadow-md overflow-hidden" data-estado="{{ order.status | lower | replace(' ', '-') }}">
+        <div class="border-l-4 border-primary">
+          <div class="p-3 sm:p-5">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0">
+              <div>
+                <h3 class="text-base sm:text-lg font-bold text-gray-800">Pedido #{{ order.order_id }}</h3>
+                <p class="text-xs sm:text-sm text-gray-500">Cliente: {{ order.name }} {{ order.last_name }}</p>
+              </div>
+              <span class="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs sm:text-sm font-medium w-fit">{{ order.status|capitalize }}</span>
+            </div>
+            <div class="mt-3 sm:mt-4 border-t pt-3 sm:pt-4">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                <div>
+                  <p class="text-gray-500">Fecha de pedido:</p>
+                  <p class="font-medium">{{ order.created_at }}</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Dirección:</p>
+                  <p class="font-medium">{{ order.address }}</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Monto:</p>
+                  <p class="font-medium">RD${{ "%.2f"|format(order.total_amount) }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 sm:mt-4 flex justify-end">
+              <a href="{{ url_for('order_details', order_id=order.order_id) }}" class="text-primary hover:text-primary-700 text-xs sm:text-sm font-medium flex items-center">
+                Ver detalles
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4 ml-1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div id="no-orders-message" class="hidden text-center py-6">
+        <p class="text-gray-500">No hay pedidos para mostrar</p>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/orders.js') }}"></script>
+{% endblock %}

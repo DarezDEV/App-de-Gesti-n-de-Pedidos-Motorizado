@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<main class="flex flex-col sm:ml-64" id="customers_table">
+    <div class="flex flex-col sm:flex-row items-center w-full justify-between p-4 sm:p-6 gap-4 sm:gap-0">
+        <h1 class="text-xl sm:text-2xl font-semibold text-gray-800 text-center sm:text-left">
+            Tablas de Usuarios
+        </h1>
+        
+        <button onclick="openAddUserModal()" class="w-full sm:w-auto bg-[#F49A13] hover:bg-[#e88b10] text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">Agregar Usuario</button>
+    </div>
+
+    <!-- Modal para agregar usuario -->
+    <div id="addUserModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop bg-black/40 bg-black bg-opacity-50 p-4 transition-opacity duration-300 overflow-y-auto">
+        <div class="relative w-full max-w-2xl bg-gradient-to-br from-white to-orange-50 rounded-2xl shadow-2xl border border-gray-100 transform scale-95 opacity-0 transition-all duration-300">
+            <div class="p-4 md:p-6 space-y-4 md:space-y-6">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center border-b border-gray-200 pb-4">
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-[#F49A13] to-orange-500">
+                        Crear Nuevo Usuario
+                    </h2>
+                </div>
+
+                <!-- Form Content -->
+                <form action="{{ url_for('create_user') }}" method="POST" class="space-y-4 md:space-y-6" enctype="multipart/form-data">   
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <!-- Photo Upload - Centered and Full Width -->
+                        <div class="flex justify-center col-span-1 md:col-span-2">
+                            <input type="file" id="photoInput1" name="photo" accept="image/*" class="hidden" onchange="previewImage(1)">
+                            <label for="photoInput1" class="cursor-pointer">
+                                <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-[#F49A13] relative overflow-hidden group">
+                                    <img id="preview1" class="w-full h-full object-cover" 
+                                         src="{{ url_for('static', filename='uploads/default.jpg') }}" 
+                                         alt="Foto de perfil">
+                                    <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center group-hover:bg-opacity-60 transition-all duration-300">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-12 md:w-12 stroke-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>  
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        <!-- Input Fields -->
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Nombre</label>
+                            <input type="text" name="name" required placeholder="Ingresa el nombre" 
+                                class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] transition-all placeholder-gray-400">
+                        </div>
+
+                        <div>
+                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Apellido</label>
+                            <input type="text" name="last_name" required placeholder="Ingresa el apellido" 
+                                class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] transition-all placeholder-gray-400">
+                        </div>
+
+                        <div>
+                            <label for="gmail" class="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Correo Electrónico</label>
+                            <input type="email" name="gmail" required placeholder="ejemplo@correo.com" 
+                                class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] transition-all placeholder-gray-400">
+                        </div>
+
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Contraseña</label>
+                            <input type="password" name="password" required placeholder="Ingrese su contraseña" 
+                                class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] transition-all placeholder-gray-400">
+                        </div>
+
+                        <!-- Role Selection - Full Width -->
+                        <div class="col-span-1 md:col-span-2">
+                            <label for="rol" class="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Rol</label>
+                            <select name="rol" required 
+                                class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] transition-all">
+                                <option value="" disabled selected>Selecciona un rol</option>
+                                <option value="admin">Admin</option>
+                                <option value="motorizado">Motorizado</option>
+                                <option value="cliente">Cliente</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col md:flex-row justify-end space-y-3 md:space-y-0 md:space-x-4 pt-4 md:pt-6 border-t border-gray-200">
+                        <button type="button" onclick="closeAddUserModal()" 
+                            class="px-4 py-2 md:px-5 md:py-2.5 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F49A13] transition-all">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                            class="px-4 py-2 md:px-5 md:py-2.5 text-sm font-medium text-white bg-gradient-to-r from-[#F49A13] to-orange-500 hover:from-[#E38902] hover:to-orange-600 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F49A13] transition-all">
+                            Crear Usuario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <section class="table__body">
+        <table>
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Foto</th>
+                    <th>Usuario</th>
+                    <th>Apellido</th>
+                    <th>Gmail</th>
+                    <th>Rol</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td><img class="w-8 h-8 rounded-full object-cover" src="{{ url_for('static', filename='uploads/' + user['photo']) }}" alt="Foto de perfil"></td>
+
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.last_name }}</td>
+                    <td>{{ user.gmail }}</td>
+                    <td>{{ user.rol }}</td>
+                    <td class="flex space-x-2">
+                        {% if user.rol != 'admin' %}
+                        <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}">
+                            <button type="submit" class="bg-[#ef5350] hover:bg-[#e53935] text-white font-bold py-2 px-4 rounded-lg">Eliminar</button>
+                        </form>
+                        {% endif %}
+                        <button onclick="openEditModal({{ user.id }})" class="bg-[#F49A13] hover:bg-[#e88b10] text-white font-bold py-2 px-4 rounded-lg">Editar</button>
+                    </td>
+                </tr>
+                <!-- Modal para editar usuario -->
+                <div id="editModal{{ user.id }}" class="fixed modal-backdrop bg-black/40 inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 p-4 transition-opacity duration-300 overflow-y-auto">
+                    <div class="relative w-full max-w-2xl bg-gradient-to-br from-white to-orange-50 rounded-2xl shadow-2xl border border-gray-100 transform scale-95 opacity-0 transition-all duration-300">
+                        <div class="p-4 md:p-6 space-y-4 md:space-y-6">
+                            <!-- Modal Header -->
+                            <div class="flex justify-between items-center border-b border-gray-200 pb-4">
+                                <h2 class="text-xl md:text-2xl font-bold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-[#F49A13] to-orange-500">
+                                    Editar Usuario
+                                </h2>
+                            </div>
+
+                            <!-- Form Content -->
+                            <form action="{{ url_for('update_user', id=user.id) }}" method="POST" class="space-y-4 md:space-y-6" enctype="multipart/form-data">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                    <!-- Photo Upload - Centered and Full Width -->
+                                    <div class="flex justify-center col-span-1 md:col-span-2">
+                                        <input type="file" id="photoInput{{ user.id }}" name="photo" accept="image/*" class="hidden" onchange="previewImage({{ user.id }})">
+                                        <label for="photoInput{{ user.id }}" class="cursor-pointer">
+                                            <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-[#F49A13] relative overflow-hidden group">
+                                                <img id="preview{{ user.id }}" class="w-full h-full object-cover" 
+                                                    src="{{ url_for('static', filename='uploads/' + user['photo']) }}" 
+                                                    alt="Foto de perfil">
+                                                    
+                                                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center group-hover:bg-opacity-60 transition-all duration-300">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-12 md:w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" class="stroke-gray-300"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" class="stroke-gray-300"/>
+                                                    </svg>                                                                                                                                        
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <!-- Input Fields -->
+                                    <div>
+                                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Nombre</label>
+                                        <input type="text" name="name" value="{{ user.name }}" required 
+                                            class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] transition-all">
+                                    </div>
+
+                                    <div>
+                                        <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Apellido</label>
+                                        <input type="text" name="last_name" value="{{ user.last_name }}" required 
+                                            class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] transition-all">
+                                    </div>
+
+                                    <div>
+                                        <label for="gmail" class="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Correo Electrónico</label>
+                                        <input type="email" name="gmail" value="{{ user.gmail }}" required 
+                                            class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] transition-all">
+                                    </div>
+
+                                    <!-- Role Selection - Takes up remaining space -->
+                                    <div>
+                                        <label for="rol" class="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Rol</label>
+                                        <select name="rol" required 
+                                            class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] transition-all">
+                                            <option value="admin" {% if user.rol == 'admin' %}selected{% endif %}>Admin</option>
+                                            <option value="motorizado" {% if user.rol == 'motorizado' %}selected{% endif %}>Motorizado</option>
+                                            <option value="cliente" {% if user.rol == 'cliente' %}selected{% endif %}>Cliente</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex flex-col md:flex-row justify-end space-y-3 md:space-y-0 md:space-x-4 pt-4 md:pt-6 border-t border-gray-200">
+                                    <button type="button" onclick="closeModal({{ user.id }})" 
+                                        class="px-4 py-2 md:px-5 md:py-2.5 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F49A13] transition-all">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" onclick="closeModal({{ user.id }})"
+                                        class="px-4 py-2 md:px-5 md:py-2.5 text-sm font-medium text-white bg-gradient-to-r from-[#F49A13] to-orange-500 hover:from-[#E38902] hover:to-orange-600 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F49A13] transition-all">
+                                        Guardar Cambios
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</main>
+{% endblock %}

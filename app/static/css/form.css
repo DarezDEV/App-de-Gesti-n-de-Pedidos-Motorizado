@@ -1,0 +1,111 @@
+:root {
+    /* Colores principales */
+    --color-primary: #F49A13;
+    --primary-hover: #db8e19e3;
+    --color-secondary: #66BB6A; /* Verde fresco */
+    --color-accent: #FF3F54; /* Rojo suave */
+
+    /* Colores neutros */
+    --color-background: #FAFAFA; /* Fondo general */
+    --color-text: #424242; /* Texto principal */
+
+    /* Colores adicionales */
+    --color-highlight: #FFDE3E; /* Amarillo cálido */
+}
+
+*{
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text);
+}
+
+body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    height: 100vh;
+}
+header {
+    width: 100%;
+    height: 10vh;
+}
+
+.logo_title {
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.btn_register {
+    color: var(--color-primary);
+}
+
+.btn_register:hover {
+    text-decoration: underline;
+}
+
+.btn_register:hover {
+    color: var(--primary-hover);
+}
+.input_from {
+    position: relative; /* Posiciona al elemento relativo a su contenedor */
+    display: block; /* El elemento se comporta como un bloque */
+    overflow: hidden; /* Oculta cualquier contenido que se desborde */
+    border-bottom: 1px solid #e5e7eb; /* Línea inferior gris claro (#e5e7eb es gray-200) */
+    background-color: transparent; /* Fondo transparente */
+    padding-top: 0.75rem;
+}
+
+.input_from:focus-within {
+    border-bottom: 1px solid var(--color-primary); /* Azul 600 */
+}
+
+
+.btn_from {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 1rem 2.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: center;
+    color: var(--color-background); 
+    background-color: var(--color-primary); 
+    border-radius: 10px;
+    transition: transform 0.5s ease-in-out; 
+    outline: none; 
+}
+
+.btn_from:hover {
+    background-color: var(--primary-hover);
+}
+
+.cont {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    color: #4b5563;
+    background-color: var(--color-background);
+}
+
+.btn_google {
+    display: block;
+    width: 100%;
+    align-items: center;
+    padding: 0.875rem 2.5rem;
+    font-size: 1rem; 
+    font-weight: 500; 
+    text-align: center; 
+    transition: transform 0.5s ease-in-out;
+    border: 2px solid #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    background-color: transparent;
+    outline: none;
+}
+  
+.btn_google:focus {
+    outline: none; /* Elimina contornos por defecto */
+    box-shadow: 0 0 0 2px var(--color-primary); /* Simula el `focus:ring-2` con anillo gris (#6b7280 es gray-500) */
+}
+

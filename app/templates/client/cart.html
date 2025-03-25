@@ -1,0 +1,258 @@
+{% extends 'baseClient.html' %}
+
+{% block title %}Carrito de compras{% endblock %}
+
+{% block content %}
+<!-- Contenido principal -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center text-sm text-gray-500 mb-6 space-x-2">
+        <a href="{{ url_for('cliente_dashboard') }}" class="hover:text-gray-900 transition-colors">Inicio</a>
+        <i class="fas fa-chevron-right text-xs text-gray-300"></i>
+        <span class="font-medium text-gray-900">Carrito</span>
+    </nav>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Columna izquierda -->
+        <div class="w-full lg:w-2/3 space-y-6">
+            <!-- Banner de envío -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div
+                    class="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-gradient-to-r from-green-500 to-emerald-500 rounded-full p-1.5">
+                            <i class="fas fa-truck text-white"></i>
+                        </div>
+                        <span class="font-medium text-green-800">¡Envío gratis en tu pedido!</span>
+                    </div>
+                    <span
+                        class="text-xs bg-green-100 text-green-800 py-1 px-3 rounded-full font-medium">Exclusivo</span>
+                </div>
+
+                <!-- Productos -->
+                <div id="cart-items-container" class="divide-y">
+                    {% if cart_items %}
+                    {% for item in cart_items %}
+                    <div class="p-6 flex items-start space-x-4 cart-item">
+                        <div class="flex-1 flex space-x-4">
+                            <div class="w-24 h-24 rounded-lg overflow-hidden bg-gray-100">
+                                <img src="{{ url_for('static', filename='uploads/' + item.image) }}"
+                                    alt="{{ item.name }}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-sm font-medium line-clamp-2">{{ item.name }}</h3>
+
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span
+                                        class="text-xs px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full font-medium">
+                                        {% if item.stock > 10 %}
+                                            En stock ({{ item.stock }} disponibles)
+                                        {% elif item.stock > 0 %}
+                                            ¡Últimas unidades! ({{ item.stock }} disponibles)
+                                        {% endif %}
+                                    </span>
+                                </div>
+
+                                <div class="mt-3 flex items-center space-x-2">
+                                    <i class="fas fa-tag text-green-500 text-sm"></i>
+                                    <span class="text-xs text-green-700">Precio unitario: RD${{ item.price }}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col items-end space-y-3">
+                                <button type="button"
+                                    class="remove-btn text-gray-400 hover:text-red-500 transition-colors"
+                                    data-id="{{ item.id }}" data-url="{{ url_for('remove_from_cart') }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+
+                                <div class="text-right">
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <span class="text-lg font-semibold item-total">RD${{ item.total_price }}</span>
+                                    </div>
+                                </div>
+
+                                <form action="{{ url_for('update_cart') }}" method="post" class="update-form">
+                                    <input type="hidden" name="cart_id" value="{{ item.id }}">
+                                    <select name="quantity" class="border rounded-lg px-3 py-1.5 text-sm bg-gray-50 hover:bg-white transition-colors cursor-pointer">
+                                        {% for i in range(0, 11) %}
+                                            <option value="{{ i }}" {% if i == item.quantity|int %}selected="selected"{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+
+                                    </select>                                    
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div id="empty-cart-message" class="p-10 text-center">
+                        <i class="fas fa-shopping-cart text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">Tu carrito está vacío</p>
+                        <a href="{{ url_for('cliente_dashboard') }}"
+                            class="mt-4 inline-block text-[#F49A13] hover:underline">Ir a comprar</a>
+                    </div>
+                    {% endif %}
+                    {% if cart_items %}
+                    <div id="empty-cart-message" class="p-10 text-center hidden">
+                        <i class="fas fa-shopping-cart text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">Tu carrito está vacío</p>
+                        <a href="{{ url_for('cliente_dashboard') }}"
+                            class="mt-4 inline-block text-[#F49A13] hover:underline">Ir a comprar</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Recomendados -->
+            {% if recommended_products|length > 0 %}
+            <div class="bg-white rounded-xl shadow-sm p-6" id="recommendations-container">
+                <h3 class="font-semibold text-lg mb-4">Recomendados para ti</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- Producto recomendado -->
+                    {% for product in recommended_products %}
+                    <a href="{{ url_for('product_detail', product_id=product.id) }}">
+                        <div class="w-full flex flex-col gap-1 p-1 rounded-md transition-all duration-300 bg-inherit hover:bg-white hover:shadow-md cursor-pointer hover:border hover:border-gray-100 recommended-product">
+                            <div class="w-full h-32 sm:h-36 md:h-40 overflow-hidden">
+                                <img class="w-full h-full object-cover object-center" src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="{{ product.name }}">
+                            </div>
+                            
+                            <div class="p-1">
+                                <p class="text-gray-500 text-xs line-clamp-2 w-full">
+                                    <span class="text-sm font-medium text-gray-700">{{ product.name }}</span>
+                                    <span class="hidden sm:inline">{{ product.description }}</span>
+                                </p>
+                                
+                                <div class="flex justify-between items-center mt-1">
+                                    <p class="text-xs font-bold text-[#F49A13]">
+                                        RD$<span class="text-sm sm:text-base">{{ product.price }}</span>
+                                    </p>
+            
+                                    <button type="button" class="add-to-cart-btn w-8 h-8 rounded-full flex items-center justify-center focus:outline-none hover:bg-gray-100" data-product-id="{{ product.id }}">
+                                        <i class="fa-solid fa-cart-plus text-sm sm:text-base text-black"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna derecha -->
+        <div class="w-full lg:w-1/3">
+            <div class="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+                <h2 class="font-semibold text-lg mb-6">Resumen del pedido</h2>
+
+                <div class="space-y-4">
+                    <div class="pt-4 border-t">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold text-lg">Total a pagar</span>
+                            <span id="cart-total" class="text-2xl font-bold">RD${{ cart_total|default(0) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="checkout-form" action="{{ url_for('checkout') }}" method="POST">
+                    <button type="button" {% if not cart_items %}disabled{% endif %}
+                        class="mt-6 w-full bg-[#F49A13] text-white py-4 rounded-xl font-medium hover:bg-[#E58903] transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
+                        id="checkout-button">
+                        Pedir ahora
+                    </button>
+                </form>
+                
+                <!-- Modal de checkout -->
+                <div id="checkout-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+                    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="font-semibold text-lg">Finalizar pedido</h2>
+                            <button type="button" class="text-gray-400 hover:text-gray-600" id="close-checkout-modal">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                
+                        <form action="{{ url_for('checkout') }}" method="POST">
+                            <!-- Paso 1: Dirección de entrega -->
+                            <div class="mb-6">
+                                <h3 class="font-medium mb-3">Dirección de entrega</h3>
+                                
+                                {% if addresses %}
+                                <div class="space-y-2 mb-4">
+                                    {% for address in addresses %}
+                                    <div class="flex items-center">
+                                        <input type="radio" name="address_id" id="address-{{ address.id }}" value="{{ address.id }}" 
+                                               {% if address.is_default %}checked{% endif %} class="mr-2">
+                                        <label for="address-{{ address.id }}" class="text-sm">{{ address.address }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                <div class="mb-4">
+                                    <label for="new-address" class="block text-sm font-medium text-gray-700 mb-1">
+                                        {% if addresses %}O añade una nueva dirección{% else %}Añade una dirección{% endif %}
+                                    </label>
+                                    <textarea id="new-address" name="new_address" rows="2" 
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-transparent"></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Paso 2: Información de pago -->
+                            <div class="mb-6">
+                                <h3 class="font-medium mb-3">Información de pago</h3>
+                                
+                                <div class="bg-gray-50 p-3 rounded-md mb-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Total a pagar:</span>
+                                        <span class="font-semibold">RD${{ cart_total|default(0) }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="payment-amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                        ¿Con cuánto pagarás? (para calcular el cambio)
+                                    </label>
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">RD$</span>
+                                        <input type="number" id="payment-amount" name="payment_amount" min="{{ cart_total|default(0) }}" 
+                                               step="0.01" value="{{ cart_total|default(0) }}" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-transparent">
+                                    </div>
+                                </div>
+                                
+                                <p class="text-sm text-gray-500 mb-4">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    El método de pago es efectivo contra entrega.
+                                </p>
+                            </div>
+                            
+                            <!-- Botones de acción -->
+                            <div class="flex space-x-3">
+                                <button type="button" id="cancel-checkout" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                                    Cancelar
+                                </button>
+                                <button type="submit" class="flex-1 py-3 bg-[#F49A13] text-white rounded-xl font-medium hover:bg-[#E58903] transition-colors">
+                                    Confirmar pedido
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-shield-alt text-green-500 mt-1"></i>
+                        <div>
+                            <p class="text-sm font-medium">Envío 100% seguro</p>
+                            <p class="text-xs text-gray-500 mt-1">Utilizamos los más altos estándares de seguridad para
+                                proteger tus pedidos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% endblock %}

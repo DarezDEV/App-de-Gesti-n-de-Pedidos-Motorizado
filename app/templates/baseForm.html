@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.png')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styleAlert.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css')}}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {% if category == 'error' %}
+                <div id="flash" class="flash-message slide-in" role="alert">
+                    <svg class="flash-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                    </svg>
+                    <div class="message-container">
+                        <span class="message">Advertencia:</span> {{ message }}
+                    </div>
+                    <button onclick="closeFlash()" class="flash-close">&times;</button>
+                </div>
+            {% elif category == 'success' %}
+                <div id="flash" class="flash-message-success slide-in" role="alert">
+                    <svg class="flash-icon-success" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z"/>
+                    </svg>
+                    <div class="message-container-success">
+                        <span class="message-success">Éxito:</span> {{ message }}
+                    </div>
+                    <button onclick="closeFlash()" class="flash-close-success">&times;</button>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+    <header>
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <a href="#" class="flex cursor-pointer items-center justify-center">
+                    <img src="../static/img/logo.png" alt="logo" class="h-10 w-10">
+                    <span class="text-xl font-bold logo_title p-2">MotoRush</span>
+                </a>
+                <div class="mt-3 md:mt-0 flex items-center">
+                </div>
+            </div>
+        </div>
+    </header> 
+    
+    {% block content %}
+
+    {% endblock %}
+    <script src="{{ url_for('static', filename='js/script.js')}}"></script>
+</body>
+</html>

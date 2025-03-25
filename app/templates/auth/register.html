@@ -1,0 +1,153 @@
+{% extends 'baseForm.html' %}
+
+{% block title %}Registro{% endblock %}
+
+{% block content %}
+<section class="flex items-center justify-center w-full h-auto md:h-[90vh] px-4">
+    <div class="container flex items-center justify-center p-2">
+        <div class="flex flex-col justify-center w-full max-w-xl h-auto md:h-full p-8 mx-auto ease-in-out transform shadow rounded-lg">
+            <div class="flex items-center justify-center mb-6">
+                <h1 class="text-3xl font-medium text-gray-700">Registro</h1>
+            </div>
+
+            {% if show_verification %}
+            <!-- Formulario de Verificación -->
+            <div class="text-center mb-6">
+                <p class="text-gray-600">Hemos enviado un código de verificación a tu correo electrónico.</p>
+                <p class="text-gray-500 text-sm mt-2">Por favor, revisa tu bandeja de entrada y spam.</p>
+            </div>
+            <form action="/register" method="POST" class="space-y-6">
+                <label class="input_from relative">
+                    <input type="text" 
+                           name="verification_code" 
+                           placeholder="" 
+                           class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                           />
+                    <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                        Código de Verificación
+                    </span>
+                </label>
+                <div class="flex flex-col items-center justify-center space-y-4">
+                    <button type="submit" class="btn_from radius w-full">
+                        Verificar Código
+                    </button>
+                    <a href="{{ url_for('register') }}" class="text-sm text-gray-600 hover:text-[#F49A13]">
+                        Volver al registro
+                    </a>
+                </div>
+            </form>
+
+            {% else %}
+            <!-- Formulario de Registro -->
+            <form action="/register" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <!-- Photo Upload - Centered and Full Width -->
+                <div class="flex justify-center col-span-1 md:col-span-2">
+                    <input type="file" id="photoInput1" name="photo" accept="image/*" class="hidden" onchange="previewImage(1)">
+                    <label for="photoInput1" class="cursor-pointer">
+                        <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-[#F49A13] relative overflow-hidden group">
+                            <img id="preview1" class="w-full h-full object-cover" 
+                                 src="{{ url_for('static', filename='uploads/default.jpg') }}" 
+                                 alt="Foto de perfil">
+                            <div class="absolute inset-0 opacity-0 hover:opacity-100 hover:bg-black flex items-center justify-center group-hover:bg-opacity-40 transition-all duration-600 ease-in-out">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-12 md:w-12 stroke-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>  
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <label class="input_from relative">
+                        <input type="text" 
+                               name="name" 
+                               placeholder="" 
+                               class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                               />
+                        <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                            Nombre
+                        </span>
+                    </label>
+                    <label class="input_from relative">
+                        <input type="text" 
+                               name="last_name" 
+                               placeholder="" 
+                               class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                               />
+                        <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                            Apellido
+                        </span>
+                    </label>
+                </div>
+
+                <label class="input_from relative">
+                    <input type="email" 
+                           name="gmail" 
+                           placeholder="" 
+                           class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                           />
+                    <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                        Gmail
+                    </span>
+                </label>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <label class="input_from relative">
+                        <input type="password" 
+                               name="password" 
+                               placeholder="" 
+                               class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                               />
+                        <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                            Contraseña
+                        </span>
+                    </label>
+                    <label class="input_from relative">
+                        <input type="password" 
+                               name="confirm_password" 
+                               placeholder="" 
+                               class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                               />
+                        <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                            Confirmar Contraseña
+                        </span>
+                    </label>
+                </div>
+
+                <div class="flex flex-col items-center justify-center">
+                    <button type="submit" class="btn_from radius w-full">
+                        Registrarse
+                    </button>
+                    <span class="mt-4 text-center text-sm">
+                        ¡Ya tienes cuenta! 
+                        <a href="{{ url_for('login') }}" class="btn_register">
+                            Iniciar Sesión
+                        </a>
+                    </span>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<script>
+function previewImage(inputNum) {
+    const input = document.getElementById('photoInput' + inputNum);
+    const preview = document.getElementById('preview' + inputNum);
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}

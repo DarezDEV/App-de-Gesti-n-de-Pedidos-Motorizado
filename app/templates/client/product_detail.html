@@ -1,0 +1,95 @@
+{% extends 'baseClient.html' %}
+
+{% block title %}Detalle de Producto{% endblock %}
+
+{% block content %}
+ <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Breadcrumb -->
+    <div class="text-sm text-gray-600 mb-6 flex items-center space-x-2">
+        <a href="{{ url_for('cliente_dashboard') }}" class="hover:text-[#F49A1A] transition-colors">Inicio</a>
+        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+        <a href="#" class="hover:text-[#F49A1A] transition-colors">{{ product.category_name }}</a>
+        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+        <span class="text-gray-800 font-medium">{{ product.name }}</span>
+    </div>
+
+    <div class="md:flex gap-8">
+        <!-- Galería de imágenes con thumbnails verticales a la izquierda -->
+        <div class="md:w-1/2 mb-8 md:mb-0">
+            <div class="grid grid-cols-[60px_1fr] gap-3">
+                <!-- Thumbnails verticales a la izquierda -->
+                <div class="flex flex-col gap-2">
+                    <div class="border rounded p-1 cursor-pointer hover:border-[#F49A1A] transition-all duration-300">
+                        <img src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="Miniatura 2" class="w-full h-auto object-cover">
+                    </div>
+                    {% if product.image2 %}
+                    <div class="border rounded p-1 cursor-pointer hover:border-[#F49A1A] transition-all duration-300">
+                        <img src="{{ url_for('static', filename='uploads/' + product.image2) }}" alt="Miniatura 3" class="w-full h-auto object-cover">
+                    </div>
+                    {% endif %}
+                    {% if product.image3 %}
+                    <div class="border rounded p-1 cursor-pointer hover:border-[#F49A1A] transition-all duration-300">
+                        <img src="{{ url_for('static', filename='uploads/' + product.image3) }}" alt="Miniatura 4" class="w-full h-auto object-cover">
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!--Imagen principal -->
+                <div id="main-image" class="overflow-hidden group aspect-square">
+                    <img src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="Estuche organizador de relojes" class="w-full h- object-cover transition-transform duration-500 group-hover:scale-105">
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del producto -->
+        <div class="md:w-1/2">
+            <div class="relative">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 leading-tight"></h1>
+                <p class="text-gray-600 mb-4">{{ product.name }} - {{ product.description }}</p>
+            </div>
+
+            <!-- Precio -->
+            <div class="rounded-lg p-4 mb-6">
+                <span class="text-3xl font-bold text-[#F49A1A]">RD${{ product.price }}</span>
+            </div>
+            
+            <!-- Opciones de envío -->
+            <div class="mb-6">
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-truck text-green-500 mr-3 text-xl"></i>
+                    <div>
+                        <div class="font-medium">Entrega a domicilio gratis</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cantidad -->
+            <form action="{{ url_for('add_to_cart') }}" method="POST" class="add-to-cart-form">
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <div class="flex items-center mb-6">
+                    <span class="text-gray-700 w-24 font-medium">Cantidad:</span>
+                    <div class="flex overflow-hidden">
+                        <select name="quantity" class="border rounded-lg px-3 py-1.5 text-sm bg-gray-50 hover:bg-white transition-colors cursor-pointer">
+                            {% for i in range(1, 11) %}
+                            <option value="{{ i }}" {% if i==product.quantity %}selected{% endif %}>{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Botones de acción -->
+            <div class="flex space-x-4 mb-6">
+                <button type="button" class="add-to-cart-btn bg-[#F49A1A] w-full text-white font-bold py-3 px-6 rounded-full text-lg hover:bg-[#F49A1A]/90 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md flex items-center justify-center" data-product-id="{{ product.id }}">
+                    <i class="fas fa-shopping-cart mr-2"></i>
+                    Añadir al carrito
+                </button>
+            </div>
+
+            
+            <!-- Línea divisoria alineada con la imagen principal -->
+            <div class="border-t border-gray-200 md:mt-0"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,517 @@
+{% extends 'base.html' %}
+{% block title %}{{ category.name }} - Productos{% endblock %}
+
+{% block content %}
+<main class="flex flex-col sm:ml-64 p-6">
+        
+    
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-8 w-full px-4 sm:px-0">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">Gestión de Productos</h2>
+            <button 
+                id="openModalBtn"
+                class="group flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 bg-[#F49A13] text-white rounded-xl 
+                    shadow-lg shadow-[#F49A13]/20 hover:shadow-[#F49A13]/30 w-full sm:w-auto justify-center sm:justify-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 text-[#FFF] transition-transform group-hover:rotate-90 duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                <span class="font-medium tracking-wide text-sm sm:text-base">Agregar Producto</span>
+            </button>
+        </div>
+    
+        <!-- Sección de Productos (cards estáticas) -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 md:mb-0">Productos</h3>
+            <div class="w-full md:w-1/3">
+                <div class="relative">
+                <input
+                    type="text"
+                    placeholder="Buscar producto..."
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-transparent w-full"
+                />
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+            </div>
+        
+            {% if products %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Producto 1 --> 
+            {% for product in products %}
+            <div class="category-card cursor-pointer relative bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 min-h-[200px] overflow-hidden z-2 product-card">
+                <img src="{{ url_for('static', filename='uploads/' + product.image) }}" class="absolute inset-0 w-full h-full object-cover" alt="{{ product.name }}">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/40 to-transparent"></div>
+                    <div class="relative p-6 h-full flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <span class="badge px-3 py-1 text-xs font-bold rounded-full bg-[#F49A13] text-white shadow-md uppercase tracking-wider">{% if product.estado == 1 %}Activo{% elif product.estado == 0  %}Inactivo{% endif %}</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <!--btn de editar producto-->
+                                <button type="button" class=" text-white hover:text-[#F49A13]  transition-colors edit-product-btn"
+                                    data-product-id="{{ product.id }}"
+                                    data-name="{{ product.name }}"
+                                    data-price="{{ product.price }}"
+                                    data-stock="{{ product.stock }}"
+                                    data-status="{{ product.estado }}"
+                                    data-description="{{ product.description }}"
+                                    data-main-image="{{ product.image }}"
+                                    data-image2="{{ product.image2 }}"
+                                    data-image3="{{ product.image3 }}"
+                                    data-category-id="{{ product.category_id }}"
+                                    onclick="event.stopPropagation();">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                </button>
+                                <form action="{{ url_for('delete_product', category_id=product.category_id, product_id=product.id) }}" method="POST" class="inline">
+                                    <button class="text-white hover:text-red-500 transition-colors edit-category-btn" onclick="event.stopPropagation(); return confirm('¿Seguro que quieres eliminar este producto?')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="mt-auto">
+                            <h3 class="text-lg font-semibold text-white mb-2">{{ product.name }}</h3>
+                            <p class="text-gray-200 text-sm mb-2 line-clamp-2">{{ product.description }}</p>
+                            <div class="mt-3 flex justify-between items-center">
+                                <span class="text-xl font-bold text-[#F49A13]">${{ product.price }}</span>
+                                <span class="badge px-3 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800 shadow-sm flex items-center gap-1">
+                                    <i class="fas fa-box-open text-xs"></i> Stock: {{ product.stock }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Modal de Editar Producto -->
+                <div id="editProductModal" class="fixed inset-0 modal-backdrop bg-black/40 flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+                    <div class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl slide-up overflow-hidden flex flex-col max-h-[95vh]">
+                        <!-- Header del modal -->
+                        <div class="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 flex-shrink-0">
+                            <div class="flex items-center gap-2 sm:gap-3">
+                                <div class="p-2 bg-[#F49A13]/10 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-[#F49A13]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                </div>
+                                <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Editar Producto</h2>
+                            </div>
+                            <button id="closeEditModalBtn" class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Formulario con scrollbar personalizado -->
+                        <div class="overflow-y-auto flex-1 custom-scrollbar">
+                            <form id="editProductForm" action="" method="POST" enctype="multipart/form-data" class="p-4 sm:p-6">
+                                <input type="hidden" name="category_id" id="edit_category_id" value="{{ category.id }}">
+                                <input type="hidden" name="product_id" id="edit_product_id" value="">
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                                    <!-- Columna izquierda - Información -->
+                                    <div class="space-y-6">
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Información del Producto</h3>
+                                            
+                                            <div class="space-y-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-600 mb-1">
+                                                        Nombre del Producto
+                                                    </label>
+                                                    <input type="text" id="edit_productName" name="name" 
+                                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                                            focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] 
+                                                            transition-all duration-300 outline-none"
+                                                        placeholder="Ej: Camiseta Deportiva, Smartphone..."
+                                                        required>
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-600 mb-1">
+                                                        Precio (USD)
+                                                    </label>
+                                                    <input type="number" id="edit_productPrice" name="price" step="0.01" min="0"
+                                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                                            focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] 
+                                                            transition-all duration-300 outline-none"
+                                                        placeholder="0.00"
+                                                        required>
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-600 mb-1">
+                                                        Stock Disponible
+                                                    </label>
+                                                    <input type="number" id="edit_productStock" name="stock" min="0"
+                                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                                            focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] 
+                                                            transition-all duration-300 outline-none"
+                                                        placeholder="0"
+                                                        required>
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-600 mb-1">
+                                                        Estado
+                                                    </label>
+                                                    <div class="flex items-center space-x-4">
+                                                        <label class="inline-flex items-center">
+                                                            <input type="radio" name="active" id="edit_active_1" value="1" class="text-[#F49A13] focus:ring-[#F49A13]">
+                                                            <span class="ml-2">Activo</span>
+                                                        </label>
+                                                        <label class="inline-flex items-center">
+                                                            <input type="radio" name="active" id="edit_active_0" value="0" class="text-[#F49A13] focus:ring-[#F49A13]">
+                                                            <span class="ml-2">Inactivo</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-600 mb-2">
+                                                Descripción
+                                            </label>
+                                            <textarea id="edit_description" name="description"
+                                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                                    focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] 
+                                                    transition-all duration-300 outline-none h-32 resize-none"
+                                                placeholder="Describe este producto..."></textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Columna derecha - Imágenes (hasta 3) -->
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Imágenes del Producto (1-3)</h3>
+                                        
+                                        <!-- Imagen Principal (requerida) -->
+                                        <div class="mb-6">
+                                            <label class="block text-sm font-medium text-gray-600 mb-2">
+                                                Imagen Principal <span class="text-sm text-gray-500">(Dejar en blanco para mantener la actual)</span>
+                                            </label>
+                                            <div id="editMainImageContainer" class="aspect-video border-2 border-dashed border-gray-300 rounded-xl
+                                                                            bg-gray-50 hover:bg-gray-100 transition-colors
+                                                                            group cursor-pointer">
+                                                <label class="w-full h-full flex flex-col items-center justify-center p-4 cursor-pointer">
+                                                    <div class="flex flex-col items-center gap-2">
+                                                        <div class="p-3 bg-[#F49A13]/10 rounded-xl group-hover:bg-[#F49A13]/20 transition-colors">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-[#F49A13]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </div>
+                                                        <div class="text-center">
+                                                            <p class="text-[#F49A13] font-medium mb-1">Imagen principal</p>
+                                                            <p class="text-xs text-gray-500">JPG, PNG, GIF o WEBP</p>
+                                                        </div>
+                                                    </div>
+                                                    <input type="file" id="editMainImage" name="main_image" class="hidden" accept="image/*">
+                                                </label>
+                                            </div>
+                                            <div id="editMainImagePreview" class="relative aspect-video rounded-xl overflow-hidden bg-gray-100 mt-2">
+                                                <img src="" alt="Preview" class="w-full h-full object-cover">
+                                                <input type="hidden" id="current_main_image" name="current_main_image" value="">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Imágenes adicionales (opcionales) -->
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <!-- Imagen 2 (opcional) -->
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-600 mb-2">
+                                                    Imagen 2 (Opcional)
+                                                </label>
+                                                <div id="editImage2Container" class="aspect-square border-2 border-dashed border-gray-300 rounded-xl
+                                                                            bg-gray-50 hover:bg-gray-100 transition-colors
+                                                                            group cursor-pointer">
+                                                    <label class="w-full h-full flex flex-col items-center justify-center p-4 cursor-pointer">
+                                                        <div class="p-2 bg-[#F49A13]/10 rounded-lg group-hover:bg-[#F49A13]/20 transition-colors">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#F49A13]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                        </div>
+                                                        <input type="file" id="editImage2" name="image2" class="hidden" accept="image/*">
+                                                    </label>
+                                                </div>
+                                                <div id="editImage2Preview" class="relative aspect-square rounded-xl overflow-hidden bg-gray-100 mt-2">
+                                                    <img src="" alt="Preview" class="w-full h-full object-cover">
+                                                    <input type="hidden" id="current_image2" name="current_image2" value="">
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Imagen 3 (opcional) -->
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-600 mb-2">
+                                                    Imagen 3 (Opcional)
+                                                </label>
+                                                <div id="editImage3Container" class="aspect-square border-2 border-dashed border-gray-300 rounded-xl
+                                                                            bg-gray-50 hover:bg-gray-100 transition-colors
+                                                                            group cursor-pointer">
+                                                    <label class="w-full h-full flex flex-col items-center justify-center p-4 cursor-pointer">
+                                                        <div class="p-2 bg-[#F49A13]/10 rounded-lg group-hover:bg-[#F49A13]/20 transition-colors">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#F49A13]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                        </div>
+                                                        <input type="file" id="editImage3" name="image3" class="hidden" accept="image/*">
+                                                    </label>
+                                                </div>
+                                                <div id="editImage3Preview" class="relative aspect-square rounded-xl overflow-hidden bg-gray-100 mt-2">
+                                                    <img src="" alt="Preview" class="w-full h-full object-cover">
+                                                    <input type="hidden" id="current_image3" name="current_image3" value="">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botones de acción -->
+                                <div class="flex flex-col-reverse sm:flex-row justify-end items-center gap-3 mt-8 pt-6 border-t border-gray-100">
+                                    <button type="button" id="cancelEditBtn"
+                                            class="w-full sm:w-auto px-6 py-3 border border-gray-200 rounded-xl text-gray-600
+                                                hover:bg-gray-50 transition-colors font-medium">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit"
+                                            class="w-full sm:w-auto px-6 py-3 bg-[#F49A13] rounded-xl text-white font-medium
+                                                shadow-lg shadow-[#F49A13]/20 hover:shadow-[#F49A13]/30
+                                                transition-all duration-300 hover:-translate-y-0.5">
+                                        Guardar Cambios
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center py-12 text-center min-h-[200px]">
+                <div class="p-4 bg-gray-100 rounded-full mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-700 mb-2">No hay productos disponibles</h3>
+                <p class="text-gray-500 max-w-md mb-6">Esta categoría aún no tiene productos. Haz clic en "Agregar Producto" para comenzar a añadir productos.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    <!-- Modal de Agregar Producto -->
+    <div id="productModal" class="fixed inset-0 modal-backdrop bg-black/40 flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl slide-up overflow-hidden flex flex-col max-h-[95vh]">
+            <!-- Header del modal -->
+            <div class="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 flex-shrink-0">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <div class="p-2 bg-[#F49A13]/10 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-[#F49A13]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Nuevo Producto</h2>
+                </div>
+                <button id="closeModalBtn" class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+    
+            <!-- Formulario con scrollbar personalizado -->
+            <div class="overflow-y-auto flex-1 custom-scrollbar">
+                <form action="{{ url_for('create_product', category_id=category.id) }}" method="POST" enctype="multipart/form-data" class="p-4 sm:p-6">
+                    <input type="hidden" name="category_id" value="{{ category.id }}">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                        <!-- Columna izquierda - Información -->
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-700 mb-4">Información del Producto</h3>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                                            Nombre del Producto
+                                        </label>
+                                        <input type="text" id="productName" name="name" 
+                                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                                   focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] 
+                                                   transition-all duration-300 outline-none"
+                                            placeholder="Ej: Camiseta Deportiva, Smartphone..."
+                                            required>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                                            Precio (USD)
+                                        </label>
+                                        <input type="number" id="productPrice" name="price" step="0.01" min="0"
+                                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                                   focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] 
+                                                   transition-all duration-300 outline-none"
+                                            placeholder="0.00"
+                                            required>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                                            Stock Disponible
+                                        </label>
+                                        <input type="number" id="productStock" name="stock" min="0"
+                                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                                   focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] 
+                                                   transition-all duration-300 outline-none"
+                                            placeholder="0"
+                                            required>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                                            Estado
+                                        </label>
+                                        <div class="flex items-center space-x-4">
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="active" value="1" checked class="text-[#F49A13] focus:ring-[#F49A13]">
+                                                <span class="ml-2">Activo</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="active" value="0" class="text-[#F49A13] focus:ring-[#F49A13]">
+                                                <span class="ml-2">Inactivo</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+    
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">
+                                    Descripción
+                                </label>
+                                <textarea name="description"
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                           focus:ring-2 focus:ring-[#F49A13] focus:border-[#F49A13] 
+                                           transition-all duration-300 outline-none h-32 resize-none"
+                                    placeholder="Describe este producto..."></textarea>
+                            </div>
+                        </div>
+    
+                        <!-- Columna derecha - Imágenes (hasta 3) -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Imágenes del Producto (1-3)</h3>
+                            
+                            <!-- Imagen Principal (requerida) -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-600 mb-2">
+                                    Imagen Principal <span class="text-red-500">*</span>
+                                </label>
+                                <div id="mainImageContainer" class="aspect-video border-2 border-dashed border-gray-300 rounded-xl
+                                                                 bg-gray-50 hover:bg-gray-100 transition-colors
+                                                                 group cursor-pointer">
+                                    <label class="w-full h-full flex flex-col items-center justify-center p-4 cursor-pointer">
+                                        <div class="flex flex-col items-center gap-2">
+                                            <div class="p-3 bg-[#F49A13]/10 rounded-xl group-hover:bg-[#F49A13]/20 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-[#F49A13]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <div class="text-center">
+                                                <p class="text-[#F49A13] font-medium mb-1">Imagen principal</p>
+                                                <p class="text-xs text-gray-500">JPG, PNG, GIF o WEBP</p>
+                                            </div>
+                                        </div>
+                                        <input type="file" id="mainImage" name="main_image" class="hidden" accept="image/*" required>
+                                    </label>
+                                </div>
+                                <div id="mainImagePreview" class="hidden relative aspect-video rounded-xl overflow-hidden bg-gray-100 mt-2">
+                                    <img src="" alt="Preview" class="w-full h-full object-cover">
+                                    <button type="button" id="removeMainImageBtn" class="absolute top-2 right-2 p-1 bg-white/90 text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Imágenes adicionales (opcionales) -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <!-- Imagen 2 (opcional) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-2">
+                                        Imagen 2 (Opcional)
+                                    </label>
+                                    <div id="image2Container" class="aspect-square border-2 border-dashed border-gray-300 rounded-xl
+                                                                   bg-gray-50 hover:bg-gray-100 transition-colors
+                                                                   group cursor-pointer">
+                                        <label class="w-full h-full flex flex-col items-center justify-center p-4 cursor-pointer">
+                                            <div class="p-2 bg-[#F49A13]/10 rounded-lg group-hover:bg-[#F49A13]/20 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#F49A13]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                </svg>
+                                            </div>
+                                            <input type="file" id="image2" name="image2" class="hidden" accept="image/*">
+                                        </label>
+                                    </div>
+                                    <div id="image2Preview" class="hidden relative aspect-square rounded-xl overflow-hidden bg-gray-100 mt-2">
+                                        <img src="" alt="Preview" class="w-full h-full object-cover">
+                                        <button type="button" id="removeImage2Btn" class="absolute top-2 right-2 p-1 bg-white/90 text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Imagen 3 (opcional) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-2">
+                                        Imagen 3 (Opcional)
+                                    </label>
+                                    <div id="image3Container" class="aspect-square border-2 border-dashed border-gray-300 rounded-xl
+                                                                   bg-gray-50 hover:bg-gray-100 transition-colors
+                                                                   group cursor-pointer">
+                                        <label class="w-full h-full flex flex-col items-center justify-center p-4 cursor-pointer">
+                                            <div class="p-2 bg-[#F49A13]/10 rounded-lg group-hover:bg-[#F49A13]/20 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#F49A13]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                </svg>
+                                            </div>
+                                            <input type="file" id="image3" name="image3" class="hidden" accept="image/*">
+                                        </label>
+                                    </div>
+                                    <div id="image3Preview" class="hidden relative aspect-square rounded-xl overflow-hidden bg-gray-100 mt-2">
+                                        <img src="" alt="Preview" class="w-full h-full object-cover">
+                                        <button type="button" id="removeImage3Btn" class="absolute top-2 right-2 p-1 bg-white/90 text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <!-- Botones de acción -->
+                    <div class="flex flex-col-reverse sm:flex-row justify-end items-center gap-3 mt-8 pt-6 border-t border-gray-100">
+                        <button type="button" id="cancelBtn"
+                                class="w-full sm:w-auto px-6 py-3 border border-gray-200 rounded-xl text-gray-600
+                                       hover:bg-gray-50 transition-colors font-medium">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                                class="w-full sm:w-auto px-6 py-3 bg-[#F49A13] rounded-xl text-white font-medium
+                                       shadow-lg shadow-[#F49A13]/20 hover:shadow-[#F49A13]/30
+                                       transition-all duration-300 hover:-translate-y-0.5">
+                            Crear Producto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
