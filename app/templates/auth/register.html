@@ -16,11 +16,13 @@
                 <p class="text-gray-600">Hemos enviado un código de verificación a tu correo electrónico.</p>
                 <p class="text-gray-500 text-sm mt-2">Por favor, revisa tu bandeja de entrada y spam.</p>
             </div>
-            <form action="/register" method="POST" class="space-y-6">
+            <form action="{{ url_for('register') }}" method="POST" class="space-y-6">
                 <label class="input_from relative">
-                    <input type="text" 
+                    <input type="number" 
                            name="verification_code" 
-                           placeholder="" 
+                           placeholder=""
+                           maxlength="6"
+                           oninput="validateVerificationCode(this)" 
                            class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
                            />
                     <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
@@ -39,7 +41,7 @@
 
             {% else %}
             <!-- Formulario de Registro -->
-            <form action="/register" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <form action="{{ url_for('register') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 <!-- Photo Upload - Centered and Full Width -->
                 <div class="flex justify-center col-span-1 md:col-span-2">
                     <input type="file" id="photoInput1" name="photo" accept="image/*" class="hidden" onchange="previewImage(1)">
@@ -62,7 +64,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <label class="input_from relative">
-                        <input type="text" 
+                        <input type="text" autocomplete="off"
                                name="name" 
                                placeholder="" 
                                class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
@@ -72,7 +74,7 @@
                         </span>
                     </label>
                     <label class="input_from relative">
-                        <input type="text" 
+                        <input type="text" autocomplete="off"
                                name="last_name" 
                                placeholder="" 
                                class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
@@ -84,7 +86,8 @@
                 </div>
 
                 <label class="input_from relative">
-                    <input type="email" 
+                    <input type="email"
+                           autocomplete="off"
                            name="gmail" 
                            placeholder="" 
                            class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
@@ -147,6 +150,15 @@ function previewImage(inputNum) {
         }
         
         reader.readAsDataURL(input.files[0]);
+    }
+}
+function validateVerificationCode(input) {
+    // Remove any non-numeric characters
+    input.value = input.value.replace(/\D/g, '');
+    
+    // Limit to 6 digits
+    if (input.value.length > 6) {
+        input.value = input.value.slice(0, 6);
     }
 }
 </script>

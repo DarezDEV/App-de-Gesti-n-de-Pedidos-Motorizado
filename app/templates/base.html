@@ -10,12 +10,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-minimal@5/minimal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">  
-    <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-  />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
-
+    {% block style%} {% endblock %}
     <title>MotoRush | {% block title %}{% endblock %}</title>
 </head>
 <body class="bg-[#f9f9f9]">
@@ -65,8 +62,6 @@
              </button>
              <a href="{% if session['user_role'] == 'admin' %}
                         {{ url_for('admin_dashboard') }}
-                     {% elif session['user_role'] == 'cliente' %}
-                        {{ url_for('cliente_dashboard') }}
                      {% elif session['user_role'] == 'motorizado' %}
                         {{ url_for('motorizado_dashboard') }}
                      {% else %}
@@ -134,7 +129,7 @@
     <div class="h-full px-3 pb-4 overflow-y-auto bg-white">
        <ul class="space-y-2 font-medium">
           <li>
-             <a href="{{ url_for('admin_dashboard') }}"
+             <a href="{{ url_for('admin_dashboard') if session['user_role'] == 'admin' else url_for('motorizado_dashboard') }}"
                 class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                 <svg
                    class="w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
@@ -148,6 +143,19 @@
              </a>
           </li>
           <li>
+            <a href="{{ url_for('admin_orders') if session['user_role'] == 'admin' else url_for('motorizado_pedidos') }}"
+               class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+               <svg
+                  class="shrink-0 w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
+                  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
+                  <path
+                     d="M17 5.923A1 1 0 0 0 16 5h-3V4a4 4 0 1 0-8 0v1H2a1 1 0 0 0-1 .923L.086 17.846A2 2 0 0 0 2.08 20h13.84a2 2 0 0 0 1.994-2.153L17 5.923ZM7 9a1 1 0 0 1-2 0V7h2v2Zm0-5a2 2 0 1 1 4 0v1H7V4Zm6 5a1 1 0 1 1-2 0V7h2v2Z" />
+               </svg>
+               <span class="flex-1 ms-3 whitespace-nowrap">Pedidos</span>
+            </a>
+         </li>
+         {% if session.get('user_role') == 'admin' %}
+         <li>
              <a href="{{ url_for('admin_category') }}"
                 class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                 <svg
@@ -159,32 +167,19 @@
 
                 <span class="flex-1 ms-3 whitespace-nowrap">Categoria</span>
              </a>
-          </li>
-          <li>
-             <a href="{{ url_for('admin_orders') }}"
-                class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
-                <svg
-                   class="shrink-0 w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
-                   aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-                   <path
-                      d="M17 5.923A1 1 0 0 0 16 5h-3V4a4 4 0 1 0-8 0v1H2a1 1 0 0 0-1 .923L.086 17.846A2 2 0 0 0 2.08 20h13.84a2 2 0 0 0 1.994-2.153L17 5.923ZM7 9a1 1 0 0 1-2 0V7h2v2Zm0-5a2 2 0 1 1 4 0v1H7V4Zm6 5a1 1 0 1 1-2 0V7h2v2Z" />
-                </svg>
-                <span class="flex-1 ms-3 whitespace-nowrap">Pedidos</span>
-             </a>
-          </li>
-          {% if session.get('user_role') == 'admin' %}
-            <li>
-               <a href="{{ url_for('admin_users') }}"
-                  class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
-                  <svg
-                     class="shrink-0 w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
-                     aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
-                     <path
-                        d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z" />
-                  </svg>
-                  <span class="flex-1 ms-3 whitespace-nowrap">Users</span>
-               </a>
-            </li>
+         </li>
+         <li>
+            <a href="{{ url_for('admin_users') }}"
+               class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+               <svg
+                  class="shrink-0 w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
+                  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+                  <path
+                     d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z" />
+               </svg>
+               <span class="flex-1 ms-3 whitespace-nowrap">Users</span>
+            </a>
+         </li>
          {% endif %}
           <li>
              <a href="{{ url_for('logout') }}"
@@ -209,13 +204,17 @@
    <script src="{{ url_for('static', filename='js/script.js')}}"></script>
    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
-   <script src="/socket.io/socket.io.js"></script>
+
+   {% if session.get('user_role') == 'admin' %}
+   <script src="{{ url_for('static', filename='js/admin_orders.js') }}"></script>
+   {% else %}
+   <script src="{{ url_for('static', filename='js/motorizado_orders.js') }}"></script>
+   {% endif %}
+
 {% block scripts %}
 {% endblock %}
-
-
-
 
 </body>
 </html>

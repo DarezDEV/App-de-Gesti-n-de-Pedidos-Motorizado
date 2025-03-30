@@ -1,0 +1,125 @@
+<!-- app/templates/motorizado/pedidos.html -->
+{% extends 'base.html' %}
+
+{% block title %}Pedidos{% endblock %}
+
+{% block style%}
+  <style>
+    .tab-indicator {
+      position: absolute;
+      bottom: 0;
+      left: 0; /* Posición inicial a la izquierda */
+      height: 3px;
+      background-color: #F49A13;
+      transition: all 0.3s ease;
+    }
+    .tab-container {
+      position: relative;
+      overflow: hidden;
+    }
+    .tab-scroll {
+      overflow-x: auto;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+      position: relative; /* Para el posicionamiento correcto */
+    }
+    .tab-scroll::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+    @media (max-width: 640px) {
+      .tab-scroll {
+        justify-content: flex-start;
+      }
+    }
+    .pedido {
+      transition: all 0.3s ease;
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    .pedido-animate {
+      animation: slideIn 0.3s ease forwards;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<main class="flex flex-col sm:ml-64 p-6">
+  <div class="container mx-auto max-w-4xl">
+    <h1 class="text-2xl font-bold text-center text-primary mb-6 sm:mb-8">Pedidos Asignados</h1>
+
+    <!-- Pestañas -->
+    <div class="bg-white rounded-t-lg shadow-md mb-1">
+      <div class="relative tab-container">
+        <div class="tab-scroll flex border-b justify-center">
+          <button id="tab-todos" class="tab-btn py-2 px-3 sm:px-5 font-medium text-primary hover:text-primary-600">Todos</button>
+          <button id="tab-en-camino" class="tab-btn py-2 px-3 sm:px-5 font-medium text-gray-500 hover:text-primary-600">En Camino</button>
+          <button id="tab-entregado" class="tab-btn py-2 px-3 sm:px-5 font-medium text-gray-500 hover:text-primary-600">Entregado</button>
+        </div>
+        <div class="tab-indicator"></div>
+      </div>
+    </div>
+
+    <!-- Contador -->
+    <div class="px-3 sm:px-6 py-2 sm:py-3 mb-4 sm:mb-6">
+      <p id="contador" class="text-gray-600">Mostrando todos los pedidos <span class="font-bold">0</span></p>
+    </div>
+
+    <!-- Mensaje de no pedidos -->
+    <div id="no-orders-message" class="hidden text-center py-6">
+      <p class="text-gray-500">No hay pedidos disponibles en este estado.</p>
+    </div>
+
+    <!-- Lista de pedidos -->
+    <div id="tab-content" class="tab-content space-y-4">
+      {% for pedido in pedidos %}
+      <div class="pedido bg-white rounded-lg shadow-md overflow-hidden" data-estado="{{ pedido.status|lower|replace(' ', '-') }}" data-order-id="{{ pedido.order_id }}">
+        <div class="border-l-4 border-primary">
+          <div class="p-4 sm:p-5">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-lg font-bold text-gray-800">Pedido #{{ pedido.order_id }}</h3>
+                <p class="text-sm text-gray-500">Cliente: {{ pedido.client_name }}</p>
+              </div>
+              <span class="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm font-medium">
+                {{ pedido.status | capitalize | replace('-', ' ') }}
+              </span>
+            </div>
+            <div class="mt-4 border-t pt-4">
+              <div class="flex flex-wrap justify-between text-sm gap-y-3">
+                <div>
+                  <p class="text-gray-500">Fecha de pedido:</p>
+                  <p class="font-medium">{{ pedido.created_at }}</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Dirección:</p>
+                  <p class="font-medium">{{ pedido.address }}</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Monto:</p>
+                  <p class="font-medium">RD${{ "%.2f"|format(pedido.total_amount) }}</p>
+                </div>
+              </div>
+            </div>
+            {% if pedido.status == 'en camino' %}
+            <div class="mt-4 flex justify-end">
+              <button onclick="marcarEntregado({{ pedido.order_id }})" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-600 transition">
+                Marcar como Entregado
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</main>
+{% endblock %}

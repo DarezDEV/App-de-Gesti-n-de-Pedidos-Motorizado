@@ -1,4 +1,4 @@
-#dasboard.py get_cart_items
+#app/routes/dasboard.py
 from flask import jsonify, render_template, session, redirect, url_for, flash, request
 import os
 from werkzeug.utils import secure_filename
@@ -216,7 +216,7 @@ class DashboardService:
             SELECT o.id AS order_id, o.total_amount, o.created_at, o.status, a.address
             FROM orders o
             JOIN addresses a ON o.address_id = a.id
-            WHERE o.motorizado_id = %s AND o.status = 'en camino'
+            WHERE o.motorizado_id = %s AND o.status IN ('pendiente', 'en camino', 'entregado')
             ORDER BY o.created_at DESC
         """, (user_id,))
         pedidos = cursor.fetchall()
@@ -228,40 +228,67 @@ class DashboardService:
         cursor.close()
         conn.close()
         
-        return render_template('motorizado/pedidos.html', pedidos=pedidos, user=DashboardService.get_user_info())
+        return render_template('motorizado/motorizado_orders.html', pedidos=pedidos, user=DashboardService.get_user_info())
     
     @staticmethod
     def marcar_entregado(order_id):
         if 'user_id' not in session or session.get('user_role') != 'motorizado':
-            flash('No tienes permiso para realizar esta acción', 'error')
-            return redirect(url_for('login'))
-        
+            return jsonify({'success': False, 'message': 'No tienes permiso para realizar esta acción'}), 403
+
         user_id = session.get('user_id')
         conn = get_db_connection()
-        cursor = conn.cursor()
-        
+        cursor = conn.cursor(dictionary=True)
+
         try:
-            cursor.execute("SELECT status FROM orders WHERE id = %s AND motorizado_id = %s", (order_id, user_id))
-            result = cursor.fetchone()
-            
-            if not result or result[0] != 'en camino':
-                flash('No puedes marcar este pedido como entregado', 'error')
-                return redirect(url_for('motorizado_pedidos'))
-            
-            cursor.execute("UPDATE orders SET status = 'entregado' WHERE id = %s", (order_id,))
-            if cursor.rowcount == 0:
-                flash("No se pudo actualizar el estado del pedido", "error")
-            else:
-                conn.commit()
-                flash('Pedido marcado como entregado', 'success')
+            # Verificar que el pedido exista y pertenezca al motorizado
+            cursor.execute(
+                "SELECT status, total_amount, created_at, address_id FROM orders WHERE id = %s AND motorizado_id = %s",
+                (order_id, user_id)
+            )
+            order = cursor.fetchone()
+
+            if not order:
+                return jsonify({'success': False, 'message': 'Pedido no encontrado o no asignado a este motorizado'}), 404
+            if order['status'] != 'en camino':
+                return jsonify({'success': False, 'message': 'El pedido no está en estado "en camino"'}), 400
+
+            # Actualizar el estado del pedido
+            cursor.execute("UPDATE orders SET status = 'entregado', updated_at = NOW() WHERE id = %s", (order_id,))
+            conn.commit()
+
+            # Obtener la dirección desde el address_id del pedido
+            try:
+                cursor.execute("SELECT address FROM addresses WHERE id = %s", (order['address_id'],))
+                address_record = cursor.fetchone()
+                address = address_record['address'] if address_record else "Sin dirección"
+            except Exception as e:
+                address = "Sin dirección"
+                print(f"Error al obtener dirección: {str(e)}")
+
+            # Preparar detalles para notificaciones
+            order_details = {
+                'order_id': order_id,
+                'status': 'entregado',
+                'total_amount': float(order['total_amount']),
+                'created_at': order['created_at'].strftime('%d/%m/%Y'),
+                'address': address
+            }
+
+            # Emitir notificaciones via Socket.IO
+            socketio.emit('order_status_update', order_details, namespace='/admin')
+            socketio.emit('order_status_update', order_details, namespace='/client')
+            socketio.emit('order_delivered', order_details, namespace='/motorizado')
+
+            print(f"Emitiendo order_status_update para el pedido {order_details['order_id']} con estado {order_details['status']}")
+
+            return jsonify({'success': True, 'message': 'Pedido marcado como entregado'}), 200
+
         except Exception as e:
             conn.rollback()
-            flash(f'Error al marcar el pedido: {str(e)}', 'error')
+            return jsonify({'success': False, 'message': f'Error al marcar el pedido: {str(e)}'}), 500
         finally:
             cursor.close()
             conn.close()
-        
-        return redirect(url_for('motorizado_pedidos'))
 
 class UserService:
     @staticmethod
@@ -960,22 +987,49 @@ class AdminController:
             return redirect(url_for("order_details", order_id=order_id))
 
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         try:
             # Verificar si el motorizado ya tiene un pedido en camino
             cursor.execute("SELECT COUNT(*) FROM orders WHERE motorizado_id = %s AND status = 'en camino'", (motorizado_id,))
-            active_orders = cursor.fetchone()[0]
+            active_orders = cursor.fetchone()['COUNT(*)']
             if active_orders > 0:
                 flash("El motorizado ya tiene un pedido en camino", "error")
                 return redirect(url_for("order_details", order_id=order_id))
 
-            # Asignar el pedido si no hay conflictos
+            # Obtener información para la notificación
+            cursor.execute("""
+                SELECT o.id AS order_id, o.total_amount, o.created_at, o.status, 
+                    u.name AS client_name, u.last_name AS client_last_name, a.address,
+                    m.name AS motorizado_name, m.last_name AS motorizado_last_name,
+                    o.user_id
+                FROM orders o
+                JOIN users u ON o.user_id = u.id
+                JOIN addresses a ON o.address_id = a.id
+                LEFT JOIN users m ON o.motorizado_id = m.id
+                WHERE o.id = %s
+            """, (order_id,))
+            order = cursor.fetchone()
+
+            # Actualizar el pedido
             cursor.execute("UPDATE orders SET motorizado_id = %s, status = 'en camino' WHERE id = %s", (motorizado_id, order_id))
             if cursor.rowcount == 0:
                 flash("No se encontró el pedido o no se pudo actualizar", "error")
             else:
                 conn.commit()
-                flash("Motorizado asignado con éxito", "success")
+                # Emitir evento a todos los interesados
+                order_details = {
+                    'order_id': order_id,
+                    'status': 'en camino',
+                    'motorizado_name': f"{order['motorizado_name']} {order['motorizado_last_name']}",
+                    'total_amount': float(order['total_amount']),
+                    'created_at': order['created_at'].strftime('%d/%m/%Y'),
+                    'address': order['address'],
+                    'client_id': order['user_id']
+                }
+                socketio.emit('order_status_update', order_details, namespace='/admin')
+                socketio.emit('order_status_update', order_details, namespace='/client')
+                socketio.emit('new_delivery', order_details, namespace='/motorizado')
+
         except Exception as e:
             conn.rollback()
             flash(f"Error al asignar motorizado: {str(e)}", "error")
@@ -983,7 +1037,7 @@ class AdminController:
             cursor.close()
             conn.close()
 
-        return redirect(url_for("admin_orders"))
+        return redirect(url_for("order_details", order_id=order_id))
 
 
 class CartService:

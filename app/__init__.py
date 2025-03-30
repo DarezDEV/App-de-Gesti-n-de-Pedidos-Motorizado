@@ -24,6 +24,18 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+@socketio.on('connect', namespace='/admin')
+def admin_connect():
+    print('Admin connected')
+
+@socketio.on('connect', namespace='/client')
+def client_connect():
+    print('Client connected')
+
+@socketio.on('connect', namespace='/motorizado')
+def motorizado_connect():
+    print('Motorizado connected')
+
 # Import modules after app and socketio are defined
 from app.extensions import bcrypt, mail
 from app.routes.dashboard import DashboardService, AdminController, UserService, FileService, CartController

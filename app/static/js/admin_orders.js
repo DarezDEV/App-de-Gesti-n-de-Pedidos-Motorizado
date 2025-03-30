@@ -22,7 +22,7 @@ tailwind.config = {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Aplicar estilos personalizados para mejorar scroll táctil y animaciones
+  // Estilos personalizados para mejorar scroll y animaciones
   const style = document.createElement('style');
   style.textContent = `
     .tab-scroll {
@@ -62,21 +62,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const socket = io('/admin');
 
-  // Request notification permission on page load
+  // Solicitar permiso de notificación al cargar la página
   function requestNotificationPermission() {
     if (Notification.permission === 'default') {
       Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          console.log('Permiso de notificación concedido');
-        } else {
-          console.log('Permiso de notificación denegado');
-        }
+        console.log(permission === 'granted' ? 'Permiso de notificación concedido' : 'Permiso de notificación denegado');
       });
     }
   }
   requestNotificationPermission();
 
-  // Handle new order event
+  // Manejar evento de nuevo pedido
   socket.on('new_order', function(order) {
     if (Notification.permission === 'granted') {
       const notification = new Notification('Nuevo Pedido Recibido', {
@@ -89,66 +85,51 @@ document.addEventListener('DOMContentLoaded', function() {
       notification.onclick = function() {
         window.location.href = notification.data.url;
       };
-    } else {
-      alert(`Nuevo pedido #${order.order_id} de ${order.client_name} por RD$${order.total_amount.toFixed(2)}`);
     }
 
-    const tabContent = document.getElementById('tab-content');
-    const newOrder = document.createElement('div');
-    newOrder.className = 'pedido bg-white rounded-lg shadow-md overflow-hidden pedido-animate';
-    newOrder.dataset.estado = order.status;
-    newOrder.innerHTML = `
-      <div class="border-l-4 border-primary">
-        <div class="p-3 sm:p-5">
-          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0">
-            <div>
-              <h3 class="text-base sm:text-lg font-bold text-gray-800">Pedido #${order.order_id}</h3>
-              <p class="text-xs sm:text-sm text-gray-500">Cliente: ${order.client_name}</p>
-            </div>
-            <span class="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs sm:text-sm font-medium w-fit">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
-          </div>
-          <div class="mt-3 sm:mt-4 border-t pt-3 sm:pt-4">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
-              <div>
-                <p class="text-gray-500">Fecha de pedido:</p>
-                <p class="font-medium">${order.created_at}</p>
-              </div>
-              <div>
-                <p class="text-gray-500">Dirección:</p>
-                <p class="font-medium">${order.address}</p>
-              </div>
-              <div>
-                <p class="text-gray-500">Monto:</p>
-                <p class="font-medium">RD$${order.total_amount.toFixed(2)}</p>
-              </div>
-            </div>
-          </div>
-          <div class="mt-3 sm:mt-4 flex justify-end">
-            <a href="/admin/order/${order.order_id}" class="text-primary hover:text-primary-700 text-xs sm:text-sm font-medium flex items-center">
-              Ver detalles
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4 ml-1">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </a>
-          </div>
-        </div>
-      </div>
-    `;
-    tabContent.insertBefore(newOrder, tabContent.firstChild);
-    updateCounter();
+    // Solo agregar si el filtro actual lo permite
+    if (estadoActual === 'todos' || estadoActual === 'pendiente') {
+      addOrderToList(order);
+    }
   });
 
+  // Manejar actualización de estado del pedido (asignación de motorizado o entrega)
+  socket.on('order_status_update', function(order) {
+      console.log('Evento recibido en admin:', order);
+      const pedido = document.querySelector(`.pedido[data-order-id="${order.order_id}"]`);
+      if (pedido) {
+          const statusSpan = pedido.querySelector('span');
+          const newStatus = formatearEstado(order.status);
+          statusSpan.textContent = newStatus;
+          pedido.dataset.estado = order.status;
+
+          // Filtrar nuevamente para mantener la consistencia
+          filtrarPedidos(estadoActual);
+
+          if (Notification.permission === 'granted') {
+              const message = order.status === 'en-camino' 
+                  ? `El pedido #${order.order_id} ha sido asignado a ${order.motorizado_name}`
+                  : `El pedido #${order.order_id} ha sido entregado`;
+              new Notification(order.status === 'en-camino' ? 'Motorizado Asignado' : 'Pedido Entregado', {
+                  body: message,
+                  icon: '/static/img/logo.png'
+              });
+          }
+      }
+  });
+
+  // Elementos del DOM
   const tabButtons = document.querySelectorAll('.tab-btn');
-  const pedidos = document.querySelectorAll('.pedido');
   const contador = document.getElementById('contador');
   const tabContent = document.getElementById('tab-content');
   const tabsContainer = document.querySelector('.tab-scroll');
   const tabIndicator = document.querySelector('.tab-indicator');
-  
-  // Variables para el manejo de deslizamiento táctil
+  const noOrdersMessage = document.getElementById('no-orders-message');
+
+  // Variables para manejo táctil
   let startX, scrollLeft, isDragging = false;
 
-  // Añadir eventos de interacción táctil mejorados
+  // Eventos táctiles
   tabsContainer.addEventListener('touchstart', function(e) {
     isDragging = true;
     startX = e.touches[0].pageX - tabsContainer.offsetLeft;
@@ -162,11 +143,11 @@ document.addEventListener('DOMContentLoaded', function() {
   tabsContainer.addEventListener('touchmove', function(e) {
     if (!isDragging) return;
     const x = e.touches[0].pageX - tabsContainer.offsetLeft;
-    const walk = (x - startX) * 2; // Velocidad de desplazamiento aumentada
+    const walk = (x - startX) * 2;
     tabsContainer.scrollLeft = scrollLeft - walk;
   });
-  
-  // Implementar eventos de mouse para compatibilidad
+
+  // Eventos de mouse
   tabsContainer.addEventListener('mousedown', function(e) {
     isDragging = true;
     startX = e.pageX - tabsContainer.offsetLeft;
@@ -188,16 +169,70 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!isDragging) return;
     e.preventDefault();
     const x = e.pageX - tabsContainer.offsetLeft;
-    const walk = (x - startX) * 1.5; // Velocidad de desplazamiento
+    const walk = (x - startX) * 1.5;
     tabsContainer.scrollLeft = scrollLeft - walk;
   });
-  
-  // Updated states list without 'pagado' and 'despachado'
-  const estados = ['todos', 'pendiente', 'en-camino', 'entregado'];
-  const noOrdersMessage = document.getElementById('no-orders-message');
 
+  // Estados posibles
+  const estados = ['todos', 'pendiente', 'en-camino', 'entregado'];
   let estadoActual = 'todos';
-  
+
+  // Función para agregar un pedido a la lista
+  function addOrderToList(order) {
+    // Verificar si el pedido ya existe en la lista
+    const existingOrder = document.querySelector(`.pedido[data-order-id="${order.order_id}"]`);
+    if (existingOrder) {
+        console.log(`El pedido #${order.order_id} ya existe en la lista.`);
+        return; // No agregar si ya existe
+    }
+
+    // Crear el elemento del nuevo pedido
+    const newOrder = document.createElement('div');
+    newOrder.className = 'pedido bg-white rounded-lg shadow-md overflow-hidden pedido-animate';
+    newOrder.dataset.estado = order.status;
+    newOrder.dataset.orderId = order.order_id; // Agregar el atributo data-order-id
+    newOrder.innerHTML = `
+        <div class="border-l-4 border-primary">
+            <div class="p-3 sm:p-5">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-gray-800">Pedido #${order.order_id}</h3>
+                        <p class="text-xs sm:text-sm text-gray-500">Cliente: ${order.client_name}</p>
+                    </div>
+                    <span class="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs sm:text-sm font-medium w-fit">${formatearEstado(order.status)}</span>
+                </div>
+                <div class="mt-3 sm:mt-4 border-t pt-3 sm:pt-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                        <div>
+                            <p class="text-gray-500">Fecha de pedido:</p>
+                            <p class="font-medium">${order.created_at}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Dirección:</p>
+                            <p class="font-medium">${order.address}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Monto:</p>
+                            <p class="font-medium">RD$${order.total_amount.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 sm:mt-4 flex justify-end">
+                    <a href="/admin/order/${order.order_id}" class="text-primary hover:text-primary-700 text-xs sm:text-sm font-medium flex items-center">
+                        Ver detalles
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4 ml-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+    tabContent.insertBefore(newOrder, tabContent.firstChild);
+    updateCounter();
+}
+
+  // Actualizar el indicador de pestaña
   function updateIndicator(activeTab) {
     if (!activeTab) return;
     tabIndicator.style.display = 'block';
@@ -206,8 +241,8 @@ document.addEventListener('DOMContentLoaded', function() {
     tabIndicator.style.width = `${tabRect.width}px`;
     const tabLeft = activeTab.offsetLeft;
     tabIndicator.style.transform = `translateX(${tabLeft}px)`;
-    
-    // Make sure the active tab is visible by scrolling if needed
+
+    // Asegurar que la pestaña activa esté visible
     if (tabLeft < tabsContainer.scrollLeft) {
       tabsContainer.scrollLeft = tabLeft;
     } else if (tabLeft + tabRect.width > tabsContainer.scrollLeft + containerRect.width) {
@@ -215,46 +250,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Actualizar el contador de pedidos visibles
   function updateCounter() {
     const visiblePedidos = Array.from(document.querySelectorAll('.pedido')).filter(p => p.style.display !== 'none');
     contador.innerHTML = estadoActual === 'todos' 
       ? `Mostrando todos los pedidos <span class="font-bold">${visiblePedidos.length}</span>`
       : `Mostrando pedidos con estado <span class="font-medium text-primary">${formatearEstado(estadoActual)}</span> <span class="font-bold">${visiblePedidos.length}</span>`;
+    
+    // Mostrar mensaje si no hay pedidos
+    if (visiblePedidos.length === 0) {
+      noOrdersMessage.classList.remove('hidden');
+    } else {
+      noOrdersMessage.classList.add('hidden');
+    }
   }
 
+  // Filtrar pedidos por estado
   function filtrarPedidos(estado) {
     const allPedidos = document.querySelectorAll('.pedido');
     let contadorVisible = 0;
 
-    // Mostrar mensaje cuando no hay pedidos
-    
-    
     allPedidos.forEach((pedido, index) => {
       if (estado === 'todos' || pedido.dataset.estado === estado) {
         pedido.style.display = 'block';
         pedido.style.opacity = '0';
         pedido.style.transform = 'translateX(20px)';
         
-        // Aplicar animación con retraso secuencial
         setTimeout(() => {
           pedido.style.opacity = '1';
           pedido.style.transform = 'translateX(0)';
-        }, index * 50); // Retraso secuencial para efecto cascada
-        
+        }, index * 50); // Efecto cascada
         contadorVisible++;
       } else {
         pedido.style.display = 'none';
       }
     });
 
-    if (contadorVisible === 0) {
-        noOrdersMessage.classList.remove('hidden');
-    } else {
-        noOrdersMessage.classList.add('hidden');
-    }
     updateCounter();
   }
-  
+
+  // Formatear el estado para mostrarlo
   function formatearEstado(estado) {
     const formateo = {
       'pendiente': 'Pendiente',
@@ -264,24 +299,23 @@ document.addEventListener('DOMContentLoaded', function() {
     return formateo[estado] || estado;
   }
 
-  
-  
+  // Actualizar estilos y posición de las pestañas
   function actualizarTabs(estado) {
     estadoActual = estado;
     tabButtons.forEach(btn => {
       const isActive = btn.id === `tab-${estado}`;
       btn.classList.toggle('text-primary', isActive);
       btn.classList.toggle('text-gray-500', !isActive);
-      
-      // Animar botones de pestañas
+
+      // Animación de pestañas
       if (isActive) {
         btn.style.transform = 'translateY(-2px)';
         setTimeout(() => {
           btn.style.transform = 'translateY(0)';
         }, 200);
       }
-      
-      // Ensure the active tab is visible in the scroll area
+
+      // Asegurar que la pestaña activa esté visible
       if (isActive) {
         setTimeout(() => {
           const rect = btn.getBoundingClientRect();
@@ -295,13 +329,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 10);
       }
     });
-    
+
     setTimeout(() => {
       const activeTab = document.getElementById(`tab-${estado}`);
       if (activeTab) updateIndicator(activeTab);
     }, 50);
   }
-  
+
+  // Añadir eventos a los botones de pestañas
   tabButtons.forEach(btn => {
     btn.addEventListener('click', function() {
       const estado = this.id.replace('tab-', '');
@@ -309,21 +344,33 @@ document.addEventListener('DOMContentLoaded', function() {
       filtrarPedidos(estado);
     });
   });
-  
-  // Responsive handling for tab indicator on window resize
+
+  // Manejo responsivo del indicador al redimensionar
   window.addEventListener('resize', function() {
     const activeTab = document.getElementById(`tab-${estadoActual}`);
     if (activeTab) updateIndicator(activeTab);
   });
-  
+
+  // Inicialización al cargar la página
   window.addEventListener('load', function() {
-    // Iniciar con cursor grab para indicar capacidad de desplazamiento
     tabsContainer.style.cursor = 'grab';
-    
-    // Configurar animación inicial
     actualizarTabs('todos');
-    
-    // Aplicar filtro con animación
     filtrarPedidos('todos');
   });
 });
+
+// Polyfill para :contains (si es necesario en algunos navegadores)
+if (!Element.prototype.matches) {
+  Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
+}
+
+if (!Element.prototype.closest) {
+  Element.prototype.closest = function(s) {
+    let el = this;
+    do {
+      if (el.matches(s)) return el;
+      el = el.parentElement || el.parentNode;
+    } while (el !== null && el.nodeType === 1);
+    return null;
+  };
+}

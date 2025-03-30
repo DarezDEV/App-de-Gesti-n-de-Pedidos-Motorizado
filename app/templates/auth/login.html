@@ -10,10 +10,10 @@
                 <h1 class="text-2xl font-semibold text-gray-700">Inicio de Sesión</h1>
             </div>
             <div class="mt-4">
-                <form action="/login" method="POST" class="space-y-6">
+                <form action="{{ url_for('login')}}" method="POST" class="space-y-6">
                     <div>
                         <label class="input_from relative block">
-                            <input type="email" name="gmail" placeholder="" class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"/>
+                            <input type="email" autocomplete="off" name="gmail" placeholder="" class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"/>
                             <span class="absolute start-0 top-2 -translate-y-1/2 text-xs text-gray-700 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">Gmail</span>
                         </label>
                     </div>
