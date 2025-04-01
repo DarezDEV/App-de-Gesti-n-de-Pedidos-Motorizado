@@ -610,3 +610,41 @@ if (table) {
     });
 }
 
+
+function confirmDisable(userId) {
+    Swal.fire({
+        title: '¿Está seguro?',
+        text: "¿Desea deshabilitar este usuario?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef5350',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, deshabilitar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // If confirmed, submit the form
+            document.getElementById('disableForm-' + userId).submit();
+        }
+    });
+
+}
+
+function confirmEnable(userId) {
+    Swal.fire({
+        title: '¿Está seguro?',
+        text: "¿Desea habilitar este usuario?",
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonColor: '#22c55e',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, habilitar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // If confirmed, submit the form
+            document.getElementById('enableForm-' + userId).submit();
+        }
+    });
+
+}

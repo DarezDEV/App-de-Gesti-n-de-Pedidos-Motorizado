@@ -7,7 +7,13 @@
             Tablas de Usuarios
         </h1>
         
-        <button onclick="openAddUserModal()" class="w-full sm:w-auto bg-[#F49A13] hover:bg-[#e88b10] text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">Agregar Usuario</button>
+        
+        <button onclick="openAddUserModal()" class="w-full sm:w-auto bg-gradient-to-r from-[#F49A13] to-[#FF7E1F] hover:from-[#FF7E1F] hover:to-[#F49A13] text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 flex items-center justify-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+            </svg>
+            <span>Agregar Usuario</span>
+        </button>
     </div>
 
     <!-- Modal para agregar usuario -->
@@ -122,11 +128,19 @@
                     <td>{{ user.rol }}</td>
                     <td class="flex space-x-2">
                         {% if user.rol != 'admin' %}
-                        <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}">
-                            <button type="submit" class="bg-[#ef5350] hover:bg-[#e53935] text-white font-bold py-2 px-4 rounded-lg">Eliminar</button>
+                        <form id="disableForm-{{ user.id }}" method="POST" action="{{ url_for('disable_user', user_id=user.id) }}">
+                            <button type="button" onclick="confirmDisable({{ user.id }})" class="text-gray-700 hover:text-[#ef5350] font-bold py-2 px-4 rounded-lg" title="Deshabilitar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                            </button>
                         </form>
                         {% endif %}
-                        <button onclick="openEditModal({{ user.id }})" class="bg-[#F49A13] hover:bg-[#e88b10] text-white font-bold py-2 px-4 rounded-lg">Editar</button>
+                        <button onclick="openEditModal({{ user.id }})" class="text-gray-700 hover:text-[#F49A13] font-bold py-2 px-4 rounded-lg" title="Editar">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </button>
                     </td>
                 </tr>
                 <!-- Modal para editar usuario -->
@@ -211,5 +225,10 @@
             </tbody>
         </table>
     </section>
+    <div class="flex justify-end w-full mb-4 p-2">
+        <a href="{{ url_for('admin_disabled_users') }}" class="text-gray-600 font-bold py-2 px-4 hover:text-[#F49A13] hover:underline rounded-lg transition-colors duration-200">
+            Ver Usuarios Deshabilitados
+        </a>
+    </div>
 </main>
 {% endblock %}
