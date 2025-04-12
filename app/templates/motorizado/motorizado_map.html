@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navegación a Destino - Pedido #{{ order_id }}</title>
+    
+    <!-- Estilos de Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+          crossorigin=""/>
+    
+    <!-- Estilos de Leaflet Routing Machine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    
+    <!-- Estilos propios -->
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+        }
+        
+        #map {
+            height: 80vh;
+            width: 100%;
+            z-index: 1;
+        }
+        
+        .status-panel {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .info-panel {
+            padding: 10px 15px;
+            background-color: #fff;
+            border-top: 1px solid #dee2e6;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .location-status {
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        
+        .location-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .location-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .btn-update-location {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-update-location:hover {
+            background-color: #0069d9;
+        }
+        
+        .btn-update-location:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .direction-details {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        #btnIniciarEntrega {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        #btnIniciarEntrega:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-panel">
+        <h3>Navegación a Destino - Pedido #{{ order_id }}</h3>
+        <div id="statusMessage" class="location-status location-inactive">
+            Esperando datos de ubicación...
+        </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="info-panel">
+        <div id="locationInfo">
+            <p><strong>Estado del pedido:</strong> <span id="orderStatus">{{ order.status }}</span></p>
+            <p><strong>Cliente:</strong> {{ client_name }}</p>
+            <p><strong>Dirección de entrega:</strong> {{ order.address }}</p>
+            {% if order.status == 'preparado' %}
+            <button id="btnIniciarEntrega" class="btn-update-location">Iniciar Entrega</button>
+            {% endif %}
+        </div>
+        
+        <div class="direction-details" id="directionDetails">
+            <p>Distancia estimada: <span id="distanceValue">Calculando...</span></p>
+            <p>Tiempo estimado: <span id="timeValue">Calculando...</span></p>
+        </div>
+    </div>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+            crossorigin=""></script>
+    
+    <!-- Leaflet Routing Machine -->
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    
+    <!-- Script principal -->
+    <script>
+        // Configuración base del mapa
+        let map, userMarker, targetMarker, routingControl;
+        let userPosition = null;
+        let targetPosition = null;
+        let isTrackingActive = false;
+        let socket;
+        let currentOrderId = '{{ order_id }}';
+        
+        // Inicializar socket.io
+        function initSocket() {
+            socket = io();
+            
+            // Escuchar eventos de actualización de ubicación
+            socket.on('location_update_' + currentOrderId, function(data) {
+                console.log('Recibida actualización de ubicación:', data);
+                updateMapMarkers(data);
+            });
+            
+            // Escuchar cambios de estado del pedido
+            socket.on('order_status_update', function(data) {
+                if (data.order_id == currentOrderId) {
+                    document.getElementById('orderStatus').textContent = data.status;
+                    
+                    if (data.status === 'entregado') {
+                        stopTracking();
+                        showNotification('Pedido entregado correctamente');
+                    }
+                }
+            });
+        }
+        
+        // Función para mostrar notificaciones
+        function showNotification(message) {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = message;
+            statusMessage.className = 'location-status location-active';
+            
+            setTimeout(() => {
+                statusMessage.className = 'location-status location-inactive';
+                statusMessage.textContent = 'Esperando datos de ubicación...';
+            }, 5000);
+        }
+        
+        // Función para actualizar la ruta en el mapa
+        function updateRoute() {
+            if (userPosition && targetPosition) {
+                if (routingControl) {
+                    map.removeControl(routingControl);
+                }
+                
+                routingControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(userPosition.lat, userPosition.lng),
+                        L.latLng(targetPosition.lat, targetPosition.lng)
+                    ],
+                    routeWhileDragging: false,
+                    addWaypoints: false,
+                    draggableWaypoints: false,
+                    fitSelectedRoutes: true,
+                    showAlternatives: false,
+                    router: L.Routing.osrmv1({
+                        serviceUrl: 'https://router.project-osrm.org/route/v1',
+                        profile: 'driving'
+                    })
+                }).on('routesfound', function(e) {
+                    const routes = e.routes;
+                    const summary = routes[0].summary;
+                    
+                    // Actualizar información de distancia y tiempo
+                    document.getElementById('distanceValue').textContent = 
+                        (summary.totalDistance / 1000).toFixed(2) + ' km';
+                    
+                    document.getElementById('timeValue').textContent = 
+                        Math.round(summary.totalTime / 60) + ' minutos';
+                }).addTo(map);
+            }
+        }
+        
+        // Función para enviar actualizaciones de ubicación al servidor
+        function sendLocationUpdate(position) {
+            if (!isTrackingActive) return;
+            
+            const locationData = {
+                order_id: currentOrderId,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+            
+            fetch('/actualizar-ubicacion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(locationData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Ubicación actualizada correctamente');
+                } else {
+                    console.error('Error al actualizar ubicación:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error en la solicitud:', error);
+            });
+        }
+        
+        // Función para iniciar el seguimiento de ubicación
+        function startTracking() {
+            if (!navigator.geolocation) {
+                showNotification('La geolocalización no es compatible con este navegador');
+                return;
+            }
+            
+            isTrackingActive = true;
+            
+            // Solicitar la posición actual y seguir actualizándola
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    console.log('Posición inicial obtenida');
+                    updateUserPosition({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                    
+                    // Enviar la ubicación inicial al servidor
+                    sendLocationUpdate(position);
+                    
+                    // Configurar seguimiento continuo
+                    const watchId = navigator.geolocation.watchPosition(
+                        position => {
+                            updateUserPosition({
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude
+                            });
+                            sendLocationUpdate(position);
+                        },
+                        error => {
+                            console.error('Error al obtener la ubicación:', error);
+                            showNotification('Error al obtener la ubicación: ' + getPositionErrorMessage(error));
+                            isTrackingActive = false;
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            maximumAge: 10000,
+                            timeout: 10000
+                        }
+                    );
+                    
+                    // Guardar ID del watcher para poder cancelarlo después
+                    window.locationWatchId = watchId;
+                    
+                    const statusMessage = document.getElementById('statusMessage');
+                    statusMessage.textContent = 'Seguimiento activo';
+                    statusMessage.className = 'location-status location-active';
+                },
+                error => {
+                    console.error('Error al obtener la ubicación inicial:', error);
+                    showNotification('Error al obtener la ubicación inicial: ' + getPositionErrorMessage(error));
+                    isTrackingActive = false;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000
+                }
+            );
+        }
+        
+        // Función para detener el seguimiento de ubicación
+        function stopTracking() {
+            if (window.locationWatchId) {
+                navigator.geolocation.clearWatch(window.locationWatchId);
+                window.locationWatchId = null;
+            }
+            
+            isTrackingActive = false;
+            
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = 'Seguimiento detenido';
+            statusMessage.className = 'location-status location-inactive';
+        }
+        
+        // Función para obtener mensaje de error de geolocalización
+        function getPositionErrorMessage(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    return "El usuario denegó la solicitud de geolocalización.";
+                case error.POSITION_UNAVAILABLE:
+                    return "La información de ubicación no está disponible.";
+                case error.TIMEOUT:
+                    return "Se agotó el tiempo de espera para obtener la ubicación.";
+                case error.UNKNOWN_ERROR:
+                    return "Ocurrió un error desconocido.";
+                default:
+                    return "Error desconocido de geolocalización.";
+            }
+        }
+        
+        // Función para actualizar los marcadores en el mapa
+        function updateMapMarkers(data) {
+            if (data.user_type === 'cliente' && data.user_id == {{ order.user_id }}) {
+                // Actualizar posición del cliente (objetivo en vista del motorizado)
+                updateTargetPosition({
+                    lat: data.latitude,
+                    lng: data.longitude
+                });
+                
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.textContent = 'Ubicación del cliente actualizada';
+                statusMessage.className = 'location-status location-active';
+                
+                // Resetear el mensaje después de unos segundos
+                setTimeout(() => {
+                    statusMessage.textContent = 'Esperando actualizaciones del cliente...';
+                    statusMessage.className = 'location-status location-inactive';
+                }, 3000);
+            } else if (data.user_type === 'motorizado' && data.user_id == {{ session.user_id }}) {
+                // Actualizar nuestra propia posición (usuario)
+                updateUserPosition({
+                    lat: data.latitude,
+                    lng: data.longitude
+                });
+            }
+        }
+        
+        // Función para actualizar la posición del usuario (motorizado)
+        function updateUserPosition(position) {
+            userPosition = position;
+            
+            if (!userMarker) {
+                // Icono personalizado para motorizado
+                userMarker = L.marker([position.lat, position.lng], {
+                    icon: L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div style="background-color: #fd7e14; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;"><span style="color: white; font-size: 14px;">🏍️</span></div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    })
+                }).addTo(map);
+            } else {
+                userMarker.setLatLng([position.lat, position.lng]);
+            }
+            
+            if (targetPosition) {
+                updateRoute();
+            }
+            
+            // Centrar el mapa si es la primera actualización
+            if (!map.userPositionInitialized) {
+                map.setView([position.lat, position.lng], 15);
+                map.userPositionInitialized = true;
+            }
+        }
+        
+        // Función para actualizar la posición del objetivo (cliente)
+        function updateTargetPosition(position) {
+            targetPosition = position;
+            
+            if (!targetMarker) {
+                // Icono personalizado para cliente
+                targetMarker = L.marker([position.lat, position.lng], {
+                    icon: L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div style="background-color: #6610f2; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;"><span style="color: white; font-size: 14px;">🏠</span></div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    })
+                }).addTo(map);
+            } else {
+                targetMarker.setLatLng([position.lat, position.lng]);
+            }
+            
+            if (userPosition) {
+                updateRoute();
+            }
+        }
+        
+        // Inicializar mapa base
+        function initMap(mapCenter = [-12.0464, -77.0428], zoom = 12) { // Lima, Perú por defecto
+            map = L.map('map').setView(mapCenter, zoom);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            map.userPositionInitialized = false;
+            
+            // Botón para centrar el mapa en la ubicación actual
+            L.control.zoom({
+                position: 'topright'
+            }).addTo(map);
+            
+            // Botón para centrar el mapa en el usuario
+            L.Control.CenterButton = L.Control.extend({
+                options: {
+                    position: 'topright'
+                },
+                
+                onAdd: function(map) {
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    const button = L.DomUtil.create('a', '', container);
+                    button.innerHTML = '📍';
+                    button.title = 'Centrar en mi ubicación';
+                    button.href = '#';
+                    button.style.fontSize = '18px';
+                    button.style.textAlign = 'center';
+                    button.style.lineHeight = '30px';
+                    button.style.width = '30px';
+                    button.style.height = '30px';
+                    button.style.display = 'block';
+                    button.style.backgroundColor = 'white';
+                    
+                    L.DomEvent.on(button, 'click', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        L.DomEvent.preventDefault(e);
+                        if (userPosition) {
+                            map.setView([userPosition.lat, userPosition.lng], 16);
+                        } else {
+                            showNotification('Ubicación no disponible');
+                        }
+                    });
+                    
+                    return container;
+                }
+            });
+            
+            new L.Control.CenterButton().addTo(map);
+        }
+        
+        // Función para iniciar la entrega
+        function iniciarEntrega() {
+            fetch('/iniciar-entrega/{{ order_id }}', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('orderStatus').textContent = 'en camino';
+                    document.getElementById('btnIniciarEntrega').style.display = 'none';
+                    showNotification('Entrega iniciada correctamente');
+                } else {
+                    showNotification('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error al iniciar entrega:', error);
+                showNotification('Error de conexión al iniciar entrega');
+            });
+        }
+        
+        // Inicializar mapa al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar socket
+            initSocket();
+            
+            // Inicializar mapa centrado en una ubicación por defecto
+            initMap();
+            
+            // Comenzar el seguimiento de ubicación del motorizado
+            startTracking();
+            
+            // Configurar evento para botón de iniciar entrega
+            const btnIniciarEntrega = document.getElementById('btnIniciarEntrega');
+            if (btnIniciarEntrega) {
+                btnIniciarEntrega.addEventListener('click', iniciarEntrega);
+            }
+            
+            // Escuchar cambios de estado del pedido
+            socket.on('order_status_update', function(data) {
+                if (data.order_id == currentOrderId) {
+                    document.getElementById('orderStatus').textContent = data.status;
+                    
+                    if (data.status === 'entregado') {
+                        showNotification('¡Pedido entregado! El seguimiento finalizará.');
+                        setTimeout(() => {
+                            stopTracking();
+                            window.location.href = '/motorizado/pedidos';
+                        }, 5000);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

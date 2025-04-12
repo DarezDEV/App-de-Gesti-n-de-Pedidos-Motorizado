@@ -117,7 +117,7 @@
               </div>
             </div>
             <div class="mt-4 flex justify-end">
-              <a href="{{ url_for('order_details', order_id=order.order_id) }}" class="text-primary hover:text-primary-700 text-sm font-medium flex items-center">
+              <a href="{{ url_for('order_details_client', order_id=order.order_id) }}" class="text-primary hover:text-primary-700 text-sm font-medium flex items-center">
                 Ver detalles
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 ml-1">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -135,9 +135,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Contenedor para notificaciones -->
-  <div id="notification-container"></div>
 
 </main>
 {% endblock %}

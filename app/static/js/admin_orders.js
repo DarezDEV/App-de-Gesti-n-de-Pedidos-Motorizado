@@ -91,31 +91,47 @@ document.addEventListener('DOMContentLoaded', function() {
     if (estadoActual === 'todos' || estadoActual === 'pendiente') {
       addOrderToList(order);
     }
+
+    // Actualizar localStorage para el contador global
+    let currentCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0');
+    if (order.status === 'pendiente') {
+      currentCount += 1;
+    }
+    localStorage.setItem('pendingOrdersCount', currentCount.toString());
+    window.dispatchEvent(new Event('recalculate-pending'));
   });
 
-  // Manejar actualización de estado del pedido (asignación de motorizado o entrega)
+  // Manejar actualización de estado del pedido
   socket.on('order_status_update', function(order) {
-      console.log('Evento recibido en admin:', order);
-      const pedido = document.querySelector(`.pedido[data-order-id="${order.order_id}"]`);
-      if (pedido) {
-          const statusSpan = pedido.querySelector('span');
-          const newStatus = formatearEstado(order.status);
-          statusSpan.textContent = newStatus;
-          pedido.dataset.estado = order.status;
+    console.log('Evento recibido en admin:', order);
+    const pedido = document.querySelector(`.pedido[data-order-id="${order.order_id}"]`);
+    if (pedido) {
+      const statusSpan = pedido.querySelector('span');
+      const newStatus = formatearEstado(order.status);
+      statusSpan.textContent = newStatus;
+      pedido.dataset.estado = order.status;
 
-          // Filtrar nuevamente para mantener la consistencia
-          filtrarPedidos(estadoActual);
+      // Filtrar nuevamente para mantener la consistencia
+      filtrarPedidos(estadoActual);
 
-          if (Notification.permission === 'granted') {
-              const message = order.status === 'en-camino' 
-                  ? `El pedido #${order.order_id} ha sido asignado a ${order.motorizado_name}`
-                  : `El pedido #${order.order_id} ha sido entregado`;
-              new Notification(order.status === 'en-camino' ? 'Motorizado Asignado' : 'Pedido Entregado', {
-                  body: message,
-                  icon: '/static/img/logo.png'
-              });
-          }
+      if (Notification.permission === 'granted') {
+        const message = order.status === 'en-camino' 
+          ? `El pedido #${order.order_id} ha sido asignado a ${order.motorizado_name}`
+          : `El pedido #${order.order_id} ha sido entregado`;
+        new Notification(order.status === 'en-camino' ? 'Motorizado Asignado' : 'Pedido Entregado', {
+          body: message,
+          icon: '/static/img/logo.png'
+        });
       }
+
+      // Actualizar localStorage para el contador global
+      let currentCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0');
+      if (order.status !== 'pendiente' && pedido.dataset.estado === 'pendiente') {
+        currentCount = Math.max(currentCount - 1, 0);
+      }
+      localStorage.setItem('pendingOrdersCount', currentCount.toString());
+      window.dispatchEvent(new Event('recalculate-pending'));
+    }
   });
 
   // Elementos del DOM
@@ -179,18 +195,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Función para agregar un pedido a la lista
   function addOrderToList(order) {
-    // Verificar si el pedido ya existe en la lista
     const existingOrder = document.querySelector(`.pedido[data-order-id="${order.order_id}"]`);
     if (existingOrder) {
-        console.log(`El pedido #${order.order_id} ya existe en la lista.`);
-        return; // No agregar si ya existe
+      console.log(`El pedido #${order.order_id} ya existe en la lista.`);
+      return;
     }
 
-    // Crear el elemento del nuevo pedido
     const newOrder = document.createElement('div');
     newOrder.className = 'pedido bg-white rounded-lg shadow-md overflow-hidden pedido-animate';
     newOrder.dataset.estado = order.status;
-    newOrder.dataset.orderId = order.order_id; // Agregar el atributo data-order-id
+    newOrder.dataset.orderId = order.order_id;
     newOrder.innerHTML = `
         <div class="border-l-4 border-primary">
             <div class="p-3 sm:p-5">
@@ -230,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     tabContent.insertBefore(newOrder, tabContent.firstChild);
     updateCounter();
-}
+  }
 
   // Actualizar el indicador de pestaña
   function updateIndicator(activeTab) {
@@ -242,7 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabLeft = activeTab.offsetLeft;
     tabIndicator.style.transform = `translateX(${tabLeft}px)`;
 
-    // Asegurar que la pestaña activa esté visible
     if (tabLeft < tabsContainer.scrollLeft) {
       tabsContainer.scrollLeft = tabLeft;
     } else if (tabLeft + tabRect.width > tabsContainer.scrollLeft + containerRect.width) {
@@ -257,7 +270,6 @@ document.addEventListener('DOMContentLoaded', function() {
       ? `Mostrando todos los pedidos <span class="font-bold">${visiblePedidos.length}</span>`
       : `Mostrando pedidos con estado <span class="font-medium text-primary">${formatearEstado(estadoActual)}</span> <span class="font-bold">${visiblePedidos.length}</span>`;
     
-    // Mostrar mensaje si no hay pedidos
     if (visiblePedidos.length === 0) {
       noOrdersMessage.classList.remove('hidden');
     } else {
@@ -279,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
           pedido.style.opacity = '1';
           pedido.style.transform = 'translateX(0)';
-        }, index * 50); // Efecto cascada
+        }, index * 50);
         contadorVisible++;
       } else {
         pedido.style.display = 'none';
@@ -307,7 +319,6 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.classList.toggle('text-primary', isActive);
       btn.classList.toggle('text-gray-500', !isActive);
 
-      // Animación de pestañas
       if (isActive) {
         btn.style.transform = 'translateY(-2px)';
         setTimeout(() => {
@@ -315,7 +326,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 200);
       }
 
-      // Asegurar que la pestaña activa esté visible
       if (isActive) {
         setTimeout(() => {
           const rect = btn.getBoundingClientRect();

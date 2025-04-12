@@ -7,78 +7,101 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="{{ url_for('static', filename='img/logo.png')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cliente.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styleAlert.css')}}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-minimal@5/minimal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">  
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/> 
     {% block style%} {% endblock %}
     <title>MotoRush | {% block title %}{% endblock %}</title>
+    <style>
+        .brand-bg {
+            background-color: #F49A13;
+        }
+    </style>
 </head>
-<body>
+<body class="font-poppins">
+
+    <div id="notifications" class="fixed top-0 right-0 p-4 space-y-4 z-50"></div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                {% if category == 'error' %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {% if category == 'error' %}
                 <div id="flash" class="flash-message slide-in" role="alert">
-                        <svg class="flash-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
-                        </svg>
-                        <div class="message-container">
-                            <span class="message">Advertencia:</span> {{ message }}
-                        </div>
-                        <button onclick="closeFlash()" class="flash-close">&times;</button>
+                    <svg class="flash-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                    </svg>
+                    <div class="message-container">
+                        <span class="message">Advertencia:</span> {{ message }}
+                    </div>
+                    <button onclick="closeFlash()" class="flash-close">&times;</button>
                 </div>
-                {% elif category == 'success' %}
+            {% elif category == 'success' %}
                 <div id="flash" class="flash-message-success slide-in" role="alert">
-                        <svg class="flash-icon-success" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z"/>
-                        </svg>
-                        <div class="message-container-success">
-                            <span class="message-success">Éxito:</span> {{ message }}
-                        </div>
-                        <button onclick="closeFlash()" class="flash-close-success">&times;</button>
+                    <svg class="flash-icon-success" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z"/>
+                    </svg>
+                    <div class="message-container-success">
+                        <span class="message-success">Éxito:</span> {{ message }}
+                    </div>
+                    <button onclick="closeFlash()" class="flash-close-success">&times;</button>
                 </div>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endwith %}
 
-    <nav class="bg-white shadow-md sticky top-0 z-50">
+    <div id="loading-spinner" class="fixed inset-0 z-[900] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center z-[1000]">
+          <div class="relative">
+            <!-- Outer rotating circle -->
+            <div class="w-16 h-16 border-4 border-[#F49A13] border-t-transparent rounded-full animate-spin"></div>
+            <!-- Motorcycle icon in the center -->
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <i class="fas fa-motorcycle text-[#F49A13] text-xl"></i>
+            </div>
+          </div>
+          <p class="mt-4 text-gray-700 font-medium">Procesando...</p>
+        </div>
+    </div>
+
+    <nav class="bg-white shadow-md sticky top-0 z-50 fixed">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
-                <div class="flex">
+                <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="/" class="flex items-center space-x-2">
+                        <a href="{{ url_for('cliente_dashboard') }}" class="flex items-center space-x-2">
                             <img src="{{ url_for('static', filename='img/logo.png')}}" alt="logo" class="h-10 w-10 object-cover">
                             <span class="text-xl font-bold text-[#F49A13] bg-clip-text">MotoRush</span>
                         </a>
                     </div>
+                    
                     {% if request.path != "/carrito" %}
                     <div class="hidden md:ml-6 md:flex md:space-x-8">
-                        <a href="#" class="inline-flex items-center px-1 pt-1 text-sm font-medium brand-color border-b-2 brand-border">
-                            Todos
+                        <a href="{{ url_for('cliente_dashboard') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#F49A13]">
+                            Inicio
                         </a>
-                        <a href="#" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-orange-500 hover:border-b-2 hover:border-orange-500">
+                        <a href="#" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#F49A13]">
                             Categorias
                         </a>
-                        <a href="{{ url_for('client_orders') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-orange-500 hover:border-b-2 hover:border-orange-500">
+                        <a href="{{ url_for('client_orders') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#F49A13]">
                             Mis pedidos
                         </a>
                     </div>
                     {% endif %}
-
                 </div>
-                <div class="relative ml-4 flex items-center">
+
+                <div class="flex items-center">
                     {% if request.path != "/carrito" %}
-                    <div class="relative">
-                        <input type="text" placeholder="Buscar productos..." class="pr-10 pl-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <div class="relative hidden sm:block">
+                        <input type="text" placeholder="Buscar productos..." class="pr-10 pl-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-transparent">
                         <button class="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <i class="fas fa-search text-gray-400"></i>
                         </button>
                     </div>
-                    <div class="cart-container">
-                        <a href="{{ url_for('cart_client')}}" id="cartIcon" class="flex items-center w-8 h-8 p-2 rounded-full hover:bg-gray-100 relative ml-2">
+                    <div class="cart-container ml-2">
+                        <a href="{{ url_for('cart_client')}}" id="cartIcon" class="flex items-center w-8 h-8 p-2 rounded-full hover:bg-gray-100 relative">
                             <i class="fas fa-shopping-cart text-gray-600"></i>
                             <span id="cart-counter" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 brand-bg rounded-full">
                                 {{ cart_count if cart_count is defined else 0 }}
@@ -89,23 +112,74 @@
                     <a href="{{ url_for('logout')}}" class="flex items-center w-8 h-8 p-2 rounded-full hover:bg-gray-100 ml-2">
                         <i class="fa-solid fa-arrow-right-from-bracket text-gray-600"></i>
                     </a>
+                    
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-button" class="ml-2 md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-[#F49A13] hover:bg-gray-100 focus:outline-none">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mobile menu, toggle classes based on menu state -->
+            <div id="mobile-menu" class="md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    {% if request.path != "/carrito" %}
+                    <div class="relative mb-3">
+                        <input type="text" placeholder="Buscar productos..." class="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-transparent">
+                        <button class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </button>
+                    </div>
+                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
+                        Todos
+                    </a>
+                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
+                        Categorias
+                    </a>
+                    <a href="{{ url_for('client_orders') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
+                        Mis pedidos
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </nav>
 
-    {% block content %}
-    {% endblock %}
+
+        {% block content %}
+        {% endblock %}
+
     
-    <script src="{{ url_for('static', filename='js/script.js')}}"></script>
-    <script src="{{ url_for('static', filename='js/cliente.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/client_orders.js') }}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
+            // Flash message auto-close
+            const flash = document.getElementById('flash');
+            if (flash) {
+                setTimeout(() => {
+                    flash.style.animation = 'slideOut 0.5s forwards';
+                    setTimeout(() => {
+                        flash.remove();
+                    }, 500);
+                }, 5000);
+            }
+            
+            // Setup cart functionality
             document.querySelectorAll('.add-to-cart-form').forEach(form => {
                 form.addEventListener('submit', function(event) {
                     event.preventDefault();
+                    
+                    // Show loading spinner
+                    document.getElementById('loading-spinner').classList.remove('hidden');
                     
                     const productId = this.querySelector('input[name="product_id"]').value;
     
@@ -118,36 +192,109 @@
                     .then(data => {
                         console.log("Respuesta del servidor:", data);
                         updateCartCounter(data.cart_count);
-                        //alert(data.message);
+                        
+                        // Hide loading spinner
+                        document.getElementById('loading-spinner').classList.add('hidden');
+                        
+                        // Show success notification
+                        showNotification('Éxito', 'Producto agregado al carrito', 'success');
                     })
                     .catch(error => {
                         console.error("Error:", error);
-                        //alert("Error al agregar al carrito");
+                        
+                        // Hide loading spinner
+                        document.getElementById('loading-spinner').classList.add('hidden');
+                        
+                        // Show error notification
+                        showNotification('Error', 'No se pudo agregar al carrito', 'error');
                     });
                 });
             });
         });
         
+        // Update cart counter
         function updateCartCounter(count) {
             const counter = document.getElementById('cart-counter');
             if (counter) {
                 counter.textContent = count;
+                
+                // Animate counter
+                counter.classList.add('scale-125');
+                setTimeout(() => {
+                    counter.classList.remove('scale-125');
+                }, 300);
+                
                 console.log("Contador actualizado a:", count);
             }
         }
+        
+        // Close flash messages
+        function closeFlash() {
+            const flash = document.getElementById('flash');
+            if (flash) {
+                flash.style.animation = 'slideOut 0.5s forwards';
+                setTimeout(() => {
+                    flash.remove();
+                }, 500);
+            }
+        }
+        
+        // Show notification
+        function showNotification(title, message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = type === 'error' 
+                ? 'fixed top-4 right-4 z-50 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md'
+                : 'fixed top-4 right-4 z-50 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md';
+            
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <div class="py-1"><svg class="${type === 'error' ? 'text-red-500' : 'text-green-500'}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        ${type === 'error' 
+                            ? '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>'
+                            : '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>'}
+                    </svg></div>
+                    <div class="ml-3">
+                        <p class="font-bold">${title}</p>
+                        <p>${message}</p>
+                    </div>
+                    <button class="ml-4" onclick="this.parentElement.parentElement.remove()">
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 5000);
+        }
 
+        // Request notification permission
         function requestNotificationPermission() {
             if (Notification.permission === 'default') {
-              Notification.requestPermission().then(permission => {
-                console.log(permission === 'granted' ? 'Notificaciones permitidas' : 'Notificaciones denegadas');
-              });
+                Notification.requestPermission().then(permission => {
+                    console.log(permission === 'granted' ? 'Notificaciones permitidas' : 'Notificaciones denegadas');
+                });
             }
-          }
-          requestNotificationPermission();
+        }
+        requestNotificationPermission();
     </script>
+    
+    <script src="{{ url_for('static', filename='js/script.js')}}"></script>
+    <script src="{{ url_for('static', filename='js/cliente.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/client_orders.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
 
-{% block scripts %}
-{% endblock %}
+    {% block scripts %}
+    {% endblock %}
     
 </body>
 </html>

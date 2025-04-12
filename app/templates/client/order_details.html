@@ -1,0 +1,229 @@
+{% extends 'baseClient.html' %}
+
+{% block title %}Detalles del Pedido{% endblock %}
+{% block style %}
+  <style>
+    :root {
+      --color-primary: #F49A13;
+    }
+    .bg-primary { background-color: var(--color-primary); }
+    .text-primary { color: var(--color-primary); }
+    .border-primary { border-color: var(--color-primary); }
+    .hover\:bg-primary-dark:hover { background-color: #e08a03; }
+  </style>
+{% endblock %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+      <!-- Header -->
+      <div class="bg-primary p-4 flex justify-between items-center">
+        <h1 class="text-white text-xl font-bold">Mi Pedido #{{ order['order_id'] }}</h1>
+        <span class="bg-white text-primary px-3 py-1 rounded-full font-semibold">{{ order['status']|capitalize }}</span>
+      </div>
+
+      <!-- Contenido principal -->
+      <div class="p-6">
+        <!-- Información del pedido -->
+        <div class="mb-6">
+          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Información del Pedido</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p class="text-gray-600 mb-1">Fecha del pedido:</p>
+              <p class="font-medium">{{ order['created_at'] }}</p>
+            </div>
+            <div>
+              <p class="text-gray-600 mb-1">Dirección de Entrega:</p>
+              <p class="font-medium">{{ order['address'] }}</p>
+            </div>
+            <div>
+              <p class="text-gray-600 mb-1">Estado:</p>
+              <p class="font-medium">{{ order['status']|capitalize }}</p>
+            </div>
+            <div>
+              <p class="text-gray-600 mb-1">Método de pago:</p>
+              <p class="font-medium">Efectivo</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Productos del pedido -->
+        <div class="mb-6">
+          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Productos del Pedido</h2>
+          {% if order['items'] %}
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead>
+                <tr class="bg-gray-50">
+                  <th class="px-4 py-2 text-left text-gray-600">Producto</th>
+                  <th class="px-4 py-2 text-center text-gray-600">Cantidad</th>
+                  <th class="px-4 py-2 text-right text-gray-600">Precio Unit.</th>
+                  <th class="px-4 py-2 text-right text-gray-600">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in order['items'] %}
+                <tr class="border-b">
+                  <td class="px-4 py-3">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 bg-gray-200 rounded mr-3">
+                        <img src="{{ url_for('static', filename='uploads/' ~ item['image']) }}" alt="{{ item['name'] }}" class="w-full h-full object-cover">
+                      </div>
+                      <span>{{ item['name'] }}</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-center">{{ item['quantity'] }}</td>
+                  <td class="px-4 py-3 text-right">RD${{ "%.2f"|format(item['price']) }}</td>
+                  <td class="px-4 py-3 text-right font-medium">RD${{ "%.2f"|format(item['price'] * item['quantity']) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" class="px-4 py-3 text-right font-semibold">Total:</td>
+                  <td class="px-4 py-3 text-right font-semibold">RD${{ "%.2f"|format(order['total_amount']) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          {% else %}
+          <p>No hay productos en este pedido.</p>
+          {% endif %}
+        </div>
+
+        <!-- Información del repartidor -->
+        {% if order['motorizado_name'] and (order['status'] == 'en camino' or order['status'] == 'entregado') %}
+        <div class="mb-6">
+          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Información del Repartidor</h2>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="font-medium">{{ order['motorizado_name'] }} {{ order['motorizado_last_name'] }}</p>
+            {% if order['status'] == 'entregado' %}
+            <p class="text-sm text-gray-600">Tu pedido ha sido entregado por este repartidor.</p>
+            {% else %}
+            <p class="text-sm text-gray-600">Tu pedido está siendo entregado por este repartidor.</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Seguimiento del pedido -->
+        <div class="mb-6">
+          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Estado del Pedido</h2>
+          <div class="relative">
+            <div class="absolute left-5 top-0 h-full border-l-2 border-dashed border-gray-300"></div>
+            <!-- Paso 1: Pedido Recibido -->
+            <div class="relative mb-6">
+              <div class="flex items-center">
+                <div class="bg-primary rounded-full h-10 w-10 flex items-center justify-center z-10">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div class="ml-4">
+                  <h3 class="font-medium">Pedido Recibido</h3>
+                  {% if order['status'] == 'entregado' %}
+                  <p class="text-sm text-gray-600">Tu pedido ha sido registrado exitosamente.</p>
+                  {% else %}
+                  <p class="text-sm text-gray-600">Tu pedido ha sido registrado exitosamente.</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <!-- Paso 2: En Preparación -->
+            <div class="relative mb-6">
+              <div class="flex items-center">
+                <div class="{% if order['status'] != 'pendiente' %}bg-primary{% else %}bg-gray-300{% endif %} rounded-full h-10 w-10 flex items-center justify-center z-10">
+                  {% if order['status'] != 'pendiente' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {% else %}
+                  <span class="text-white font-medium">2</span>
+                  {% endif %}
+                </div>
+                <div class="ml-4">
+                  <h3 class="font-medium">En Preparación</h3>
+                  <p class="text-sm text-gray-600">Estamos preparando tu pedido.</p>
+                </div>
+              </div>
+            </div>
+            <!-- Paso 3: En Camino -->
+            <div class="relative mb-6">
+              <div class="flex items-center">
+                <div class="{% if order['status'] == 'en camino' or order['status'] == 'entregado' %}bg-primary{% else %}bg-gray-300{% endif %} rounded-full h-10 w-10 flex items-center justify-center z-10">
+                  {% if order['status'] == 'en camino' or order['status'] == 'entregado' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {% else %}
+                  <span class="text-white font-medium">3</span>
+                  {% endif %}
+                </div>
+                <div class="ml-4">
+                  <h3 class="font-medium">En Camino</h3>
+                  <p class="text-sm text-gray-600">Tu pedido está en camino hacia tu dirección.</p>
+                </div>
+              </div>
+            </div>
+            <!-- Paso 4: Entregado -->
+            <div class="relative">
+              <div class="flex items-center">
+                <div class="{% if order['status'] == 'entregado' %}bg-primary{% else %}bg-gray-300{% endif %} rounded-full h-10 w-10 flex items-center justify-center z-10">
+                  {% if order['status'] == 'entregado' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {% else %}
+                  <span class="text-white font-medium">4</span>
+                  {% endif %}
+                </div>
+                <div class="ml-4">
+                  <h3 class="font-medium">Entregado</h3>
+                  <p class="text-sm text-gray-600">Tu pedido ha sido entregado.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acción para cancelar (si está pendiente) -->
+        {% if order['status'] == 'pendiente' %}
+        <div class="mb-6">
+          <form action="{{ url_for('cancel_order') }}" method="post" onsubmit="return confirm('¿Estás seguro de cancelar este pedido?')">
+            <input type="hidden" name="order_id" value="{{ order['order_id'] }}">
+            <button type="submit" class="bg-red-500 text-white py-2 px-6 rounded-lg font-medium hover:bg-red-600">Cancelar Pedido</button>
+          </form>
+        </div>
+        {% endif %}
+
+        {% if order['status'] == 'en camino' %}
+        <a href="{{ url_for('cliente_mapa', order_id=order['order_id']) }}" class="btn btn-primary">
+          <i class="fas fa-map-marker-alt"></i> Seguir en mapa
+        </a>
+        {% endif %}
+
+        <!-- Acción final -->
+        <div class="mt-8 flex justify-end">
+          <a href="{{ url_for('client_orders') }}" class="mr-4 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Volver a Mis Pedidos</a>
+          {% if order['status'] == 'entregado' %}
+          <a href="{{ url_for('cliente_dashboard') }}" class="py-2 px-4 bg-primary text-white rounded-lg hover:bg-primary-dark">Comprar de Nuevo</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const socket = io('/client');
+      socket.on('connect', function() {
+        console.log('Conectado al servidor de Socket.IO');
+      });
+      socket.on('order_status_update', function(data) {
+        if (data.order_id == {{ order['order_id'] }} && data.client_id == {{ session.get('user_id') }}) {
+          window.location.reload();
+        }
+      });
+    });
+  </script>
+{% endblock %}

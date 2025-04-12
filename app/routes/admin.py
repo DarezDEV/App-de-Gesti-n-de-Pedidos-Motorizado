@@ -27,7 +27,83 @@ class AdminController:
         if self.check_admin_permission():
             return self.check_admin_permission()
         user = self.dashboard_service.get_user_info()
-        return render_template('admin/admin.html', user=user)
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Total de ventas
+        cursor.execute("SELECT COUNT(*) as total, SUM(total_amount) as revenue FROM orders WHERE status = 'entregado'")
+        sales_data = cursor.fetchone()
+        total_sales = sales_data['total'] or 0
+        total_revenue = float(sales_data['revenue'] or 0)
+        
+        # Pedidos pendientes
+        cursor.execute("SELECT COUNT(*) as count FROM orders WHERE status = 'pendiente'")
+        pending_orders = cursor.fetchone()['count']
+        
+        # Pedidos en camino
+        cursor.execute("SELECT COUNT(*) as count FROM orders WHERE status = 'en camino'")
+        in_progress_orders = cursor.fetchone()['count']
+        
+        # Total usuarios
+        cursor.execute("SELECT COUNT(*) as count FROM users WHERE rol = 'cliente' AND status = 'activo'")
+        active_users = cursor.fetchone()['count']
+        
+        # Top 5 productos más vendidos
+        cursor.execute("""
+            SELECT p.name, SUM(oi.quantity) as total_sold
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.status = 'entregado'
+            GROUP BY p.id
+            ORDER BY total_sold DESC
+            LIMIT 5
+        """)
+        top_products = cursor.fetchall()
+        
+        # Ventas por categoría
+        cursor.execute("""
+            SELECT c.name, COUNT(o.id) as order_count, SUM(o.total_amount) as total_revenue
+            FROM orders o
+            JOIN order_items oi ON o.id = oi.order_id
+            JOIN products p ON oi.product_id = p.id
+            JOIN categories c ON p.category_id = c.id
+            WHERE o.status = 'entregado'
+            GROUP BY c.id
+            ORDER BY total_revenue DESC
+        """)
+        category_sales = cursor.fetchall()
+        
+        # Ventas por mes (últimos 6 meses)
+        cursor.execute("""
+            SELECT 
+                DATE_FORMAT(created_at, '%Y-%m') as month,
+                COUNT(*) as order_count,
+                SUM(total_amount) as revenue
+            FROM orders
+            WHERE status = 'entregado'
+            GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+            ORDER BY month DESC
+            LIMIT 6
+        """)
+        monthly_sales = cursor.fetchall()
+        monthly_sales.reverse()  # Para mostrar en orden cronológico
+        
+        cursor.close()
+        conn.close()
+        
+        statistics = {
+            'total_sales': total_sales,
+            'total_revenue': total_revenue,
+            'pending_orders': pending_orders,
+            'in_progress_orders': in_progress_orders,
+            'active_users': active_users,
+            'top_products': top_products,
+            'category_sales': category_sales,
+            'monthly_sales': monthly_sales
+        }
+
+        return render_template('admin/admin.html', user=user, stats=statistics)
     
     def admin_users(self):
         if self.check_admin_permission():

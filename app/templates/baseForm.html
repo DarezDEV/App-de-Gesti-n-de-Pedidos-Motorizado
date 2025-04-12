@@ -40,6 +40,20 @@
     {% endif %}
 {% endwith %}
 
+<div id="loading-spinner" class="fixed inset-0 z-[900] flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center z-[1000]">
+      <div class="relative">
+        <!-- Outer rotating circle -->
+        <div class="w-16 h-16 border-4 border-[#F49A13] border-t-transparent rounded-full animate-spin"></div>
+        <!-- Motorcycle icon in the center -->
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          <i class="fas fa-motorcycle text-[#F49A13] text-xl"></i>
+        </div>
+      </div>
+      <p class="mt-4 text-gray-700 font-medium">Procesando...</p>
+    </div>
+</div>
+
     <header>
         <div class="container mx-auto px-6 py-3">
             <div class="flex flex-col md:flex-row items-center justify-between">

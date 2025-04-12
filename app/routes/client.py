@@ -114,7 +114,63 @@ class ClientController:
             user=DashboardService.get_user_info(), 
             orders=orders
         )
-
+    
+    @staticmethod
+    def order_details_client(order_id):
+        if 'user_id' not in session:
+            flash('Debes iniciar sesión primero', 'error')
+            return redirect(url_for('login'))
+        
+        user_id = session.get('user_id')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Obtener la información básica de la orden
+        cursor.execute("""
+            SELECT o.id AS order_id, o.total_amount, o.created_at, o.status, 
+                a.address, m.name AS motorizado_name, m.last_name AS motorizado_last_name
+            FROM orders o
+            JOIN addresses a ON o.address_id = a.id
+            LEFT JOIN users m ON o.motorizado_id = m.id
+            WHERE o.id = %s AND o.user_id = %s
+        """, (order_id, user_id))
+        
+        order = cursor.fetchone()
+        
+        if not order:
+            flash('Pedido no encontrado o no tienes permiso para ver este pedido', 'error')
+            return redirect(url_for('client_orders'))
+        
+        # Formatear la fecha si es necesario
+        if isinstance(order['created_at'], str):
+            order['created_at'] = datetime.strptime(order['created_at'], '%Y-%m-%d %H:%M:%S').strftime('%d/%m/%Y')
+        else:
+            order['created_at'] = order['created_at'].strftime('%d/%m/%Y')
+        
+        # Convertir el total a flotante para asegurar el formato correcto
+        order['total_amount'] = float(order['total_amount'])
+        
+        # Obtener los items del pedido
+        cursor.execute("""
+            SELECT oi.product_id, oi.quantity, oi.price, p.name, p.image
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = %s
+        """, (order_id,))
+        
+        order['items'] = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+        
+        return render_template(
+            'client/order_details.html', 
+            order=order,
+            user=DashboardService.get_user_info(),
+            session=session
+        )
+    
 class CartController:
     @staticmethod
     def add_to_cart():

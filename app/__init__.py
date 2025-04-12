@@ -1,5 +1,5 @@
 # app/__init__.py
-from flask import Flask, render_template
+from flask import Flask, render_template, request, session, redirect, url_for, make_response
 from flask_socketio import SocketIO, emit
 import os
 
@@ -45,6 +45,7 @@ from app.routes.motorizado import MotorizadoController
 from app.routes.service import UserService, FileService
 from app.routes.auth import AuthController, AuthService, EmailService
 from app.IA.recommendation_service import Url_recommendation
+from app.routes.maps import MapsController
 
 # Inicializar extensiones
 bcrypt.init_app(app)
@@ -59,6 +60,7 @@ auth_service = AuthService()
 auth_controller = AuthController(auth_service)
 admin_controller = AdminController(dashboard_service, user_service, file_service)
 cart_controller = CartController()
+maps_controller = MapsController()
 
 # --- Rutas de Autenticación ---
 app.add_url_rule('/register', view_func=auth_controller.register, methods=['GET', 'POST'])
@@ -92,6 +94,7 @@ app.add_url_rule('/dashboard/cliente', view_func=ClientController.cliente_dashbo
 app.add_url_rule('/carrito', view_func=ClientController.cart_client)
 app.add_url_rule('/producto/<int:product_id>', view_func=ClientController.product_detail)
 app.add_url_rule('/cliente/orders', view_func=ClientController.client_orders)
+app.add_url_rule('/detalle/order/<int:order_id>', view_func=ClientController.order_details_client, methods=['GET'])
 app.add_url_rule('/add_to_cart/', view_func=cart_controller.add_to_cart, methods=['POST'])
 app.add_url_rule('/update-cart', view_func=cart_controller.update_cart, methods=['POST'])
 app.add_url_rule('/remove_from_cart', view_func=cart_controller.remove_from_cart, methods=['POST'])
@@ -105,12 +108,19 @@ app.add_url_rule('/track-view', view_func=cart_controller.track_view, methods=['
 # --- Rutas de Motorizado ---
 app.add_url_rule('/dashboard/motorizado', view_func=MotorizadoController.motorizado_dashboard)
 app.add_url_rule('/motorizado/pedidos', view_func=MotorizadoController.motorizado_pedidos)
+app.add_url_rule('/pedido/detalle/<int:order_id>', view_func=MotorizadoController.motorizado_order_details, methods=['GET'])
 app.add_url_rule('/marcar_entregado/<int:order_id>', view_func=MotorizadoController.marcar_entregado, methods=['POST'])
 
 # --- Rutas de Recomendaciones ---
 app.add_url_rule('/recommendations/<int:user_id>', view_func=Url_recommendation.get_recommendations, methods=['GET'])
 app.add_url_rule('/track_view', view_func=Url_recommendation.track_product_view, methods=['POST'])
 app.add_url_rule('/cart_patterns/<int:user_id>', view_func=Url_recommendation.analyze_cart_patterns, methods=['GET'])
+
+# --- Rutas de Mapas ---
+app.add_url_rule('/cliente/mapa/<int:order_id>', view_func=maps_controller.cliente_mapa)
+app.add_url_rule('/motorizado/mapa/<int:order_id>', view_func=maps_controller.motorizado_mapa)
+app.add_url_rule('/actualizar-ubicacion', view_func=maps_controller.actualizar_ubicacion, methods=['POST'])
+app.add_url_rule('/iniciar-entrega/<int:order_id>', view_func=maps_controller.iniciar_entrega, methods=['POST'])
 
 # Rutas de error
 @app.errorhandler(404)

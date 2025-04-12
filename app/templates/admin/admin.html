@@ -2,11 +2,196 @@
 
 {% block title %}Dashboard{% endblock %}
 
+{% block style %}
+<style>
+   .stat-card {
+       border-radius: 8px;
+       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+       padding: 1.5rem;
+       transition: transform 0.3s ease;
+   }
+   .stat-card:hover {
+       transform: translateY(-5px);
+   }
+   .chart-container {
+       position: relative;
+       margin: auto;
+       height: 300px;
+       width: 100%;
+   }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<main class="flex flex-col sm:ml-64 p-6">
-   <h1 class="text-black">Hola {{ user.name }}, Bienvenido al Dashboard de {{ session['user_role'] }} </h1>
+<main class="p-4 sm:ml-64">
+   <div class="p-4">
+       <h1 class="text-2xl font-bold text-gray-800 mb-6">Dashboard de Estadísticas</h1>
+       
+       <!-- Tarjetas de estadísticas -->
+       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+           <div class="stat-card bg-white">
+               <h2 class="text-lg font-semibold text-gray-700">Ventas Totales</h2>
+               <p class="text-3xl font-bold text-blue-600">{{ stats.total_sales }}</p>
+               <p class="text-gray-500">Pedidos entregados</p>
+           </div>
+           
+           <div class="stat-card bg-white">
+               <h2 class="text-lg font-semibold text-gray-700">Ingresos Totales</h2>
+               <p class="text-3xl font-bold text-green-600">${{ "%.2f"|format(stats.total_revenue) }}</p>
+               <p class="text-gray-500">De pedidos entregados</p>
+           </div>
+           
+           <div class="stat-card bg-white">
+               <h2 class="text-lg font-semibold text-gray-700">Pedidos Pendientes</h2>
+               <p class="text-3xl font-bold text-yellow-600">{{ stats.pending_orders }}</p>
+               <p class="text-gray-500">Por procesar</p>
+           </div>
+           
+           <div class="stat-card bg-white">
+               <h2 class="text-lg font-semibold text-gray-700">Usuarios Activos</h2>
+               <p class="text-3xl font-bold text-purple-600">{{ stats.active_users }}</p>
+               <p class="text-gray-500">Clientes registrados</p>
+           </div>
+       </div>
+       
+       <!-- Gráficos -->
+       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+           <!-- Ventas mensuales -->
+           <div class="bg-white p-6 rounded-lg shadow">
+               <h2 class="text-lg font-semibold text-gray-700 mb-4">Ventas Mensuales</h2>
+               <div class="chart-container">
+                   <canvas id="monthlySalesChart"></canvas>
+               </div>
+           </div>
+           
+           <!-- Ventas por categoría -->
+           <div class="bg-white p-6 rounded-lg shadow">
+               <h2 class="text-lg font-semibold text-gray-700 mb-4">Ventas por Categoría</h2>
+               <div class="chart-container">
+                   <canvas id="categorySalesChart"></canvas>
+               </div>
+           </div>
+       </div>
+       
+       <!-- Top productos -->
+       <div class="bg-white p-6 rounded-lg shadow mb-8">
+           <h2 class="text-lg font-semibold text-gray-700 mb-4">Top 5 Productos Más Vendidos</h2>
+           <div class="overflow-x-auto">
+               <table class="min-w-full bg-white">
+                   <thead>
+                       <tr>
+                           <th class="py-2 px-4 border-b text-left">Producto</th>
+                           <th class="py-2 px-4 border-b text-left">Unidades Vendidas</th>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {% for product in stats.top_products %}
+                       <tr>
+                           <td class="py-2 px-4 border-b">{{ product.name }}</td>
+                           <td class="py-2 px-4 border-b">{{ product.total_sold }}</td>
+                       </tr>
+                       {% endfor %}
+                   </tbody>
+               </table>
+           </div>
+       </div>
+       
+       <!-- Rendimiento por categoría -->
+       <div class="bg-white p-6 rounded-lg shadow">
+           <h2 class="text-lg font-semibold text-gray-700 mb-4">Rendimiento por Categoría</h2>
+           <div class="overflow-x-auto">
+               <table class="min-w-full bg-white">
+                   <thead>
+                       <tr>
+                           <th class="py-2 px-4 border-b text-left">Categoría</th>
+                           <th class="py-2 px-4 border-b text-left">Pedidos</th>
+                           <th class="py-2 px-4 border-b text-left">Ingresos</th>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {% for category in stats.category_sales %}
+                       <tr>
+                           <td class="py-2 px-4 border-b">{{ category.name }}</td>
+                           <td class="py-2 px-4 border-b">{{ category.order_count }}</td>
+                           <td class="py-2 px-4 border-b">${{ "%.2f"|format(category.total_revenue) }}</td>
+                       </tr>
+                       {% endfor %}
+                   </tbody>
+               </table>
+           </div>
+       </div>
+   </div>
 </main>
 
+{% endblock %}
 
+{% block scripts %}
+<script>
+    // Datos para gráficos
+    const monthlySalesData = {
+      labels: [{% for month in stats.monthly_sales %}'{{ month.month }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+      datasets: [{
+          label: 'Ingresos mensuales',
+          data: [{% for month in stats.monthly_sales %}{{ month.revenue }}{% if not loop.last %}, {% endif %}{% endfor %}],
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true
+      }]
+  };
+  
+  const categorySalesData = {
+      labels: [{% for category in stats.category_sales %}'{{ category.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+      datasets: [{
+          label: 'Ingresos por categoría',
+          data: [{% for category in stats.category_sales %}{{ category.total_revenue }}{% if not loop.last %}, {% endif %}{% endfor %}],
+          backgroundColor: [
+              'rgba(255, 99, 132, 0.6)',
+              'rgba(54, 162, 235, 0.6)',
+              'rgba(255, 206, 86, 0.6)',
+              'rgba(75, 192, 192, 0.6)',
+              'rgba(153, 102, 255, 0.6)',
+              'rgba(255, 159, 64, 0.6)'
+          ],
+          borderWidth: 1
+      }]
+  };
+  
+  // Inicializar gráficos cuando el DOM esté listo
+  document.addEventListener('DOMContentLoaded', function() {
+      // Gráfico de ventas mensuales
+      const monthlySalesCtx = document.getElementById('monthlySalesChart').getContext('2d');
+      new Chart(monthlySalesCtx, {
+          type: 'line',
+          data: monthlySalesData,
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                  y: {
+                      beginAtZero: true
+                  }
+              }
+          }
+      });
+      
+      // Gráfico de ventas por categoría
+      const categorySalesCtx = document.getElementById('categorySalesChart').getContext('2d');
+      new Chart(categorySalesCtx, {
+          type: 'pie',
+          data: categorySalesData,
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: {
+                      position: 'bottom'
+                  }
+              }
+          }
+      });
+  });
+</script>
 {% endblock %}

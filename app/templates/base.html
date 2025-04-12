@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,11 +12,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">  
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    
+    <!-- Role-specific stylesheets -->
+    {% if session['user_role'] == 'admin' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-theme.css')}}">
+    {% elif session['user_role'] == 'motorizado' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/motorizado-theme.css')}}">
+    {% endif %}
+    
     {% block style%} {% endblock %}
     <title>MotoRush | {% block title %}{% endblock %}</title>
 </head>
-<body class="bg-[#f9f9f9]">
+<body class="{% if session['user_role'] == 'admin' %}bg-[#f9f9f9]{% elif session['user_role'] == 'motorizado' %}bg-[#f5f8fa]{% else %}bg-[#f9f9f9]{% endif %}">
 
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -45,13 +55,40 @@
     {% endif %}
 {% endwith %}
 
-<nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 ">
+<div id="loading-spinner" class="fixed inset-0 z-[900] flex items-center justify-center bg-black bg-opacity-50 hidden">
+   <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center z-[1000]">
+     <div class="relative">
+       <!-- Outer rotating circle -->
+       <div class="w-16 h-16 border-4 border-[#F49A13] border-t-transparent rounded-full animate-spin"></div>
+       <!-- Motorcycle icon in the center -->
+       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+         <i class="fas fa-motorcycle text-[#F49A13] text-xl"></i>
+       </div>
+     </div>
+     <p class="mt-4 text-gray-700 font-medium">Procesando...</p>
+   </div>
+</div>
+
+<!-- Role-specific navigation bar -->
+<nav class="fixed top-0 z-50 w-full border-b border-gray-200 
+    {% if session['user_role'] == 'admin' %}
+    bg-white
+    {% elif session['user_role'] == 'motorizado' %}
+    bg-[#2c3e50] text-white
+    {% else %}
+    bg-white
+    {% endif %}">
     <div class="px-3 py-3 lg:px-5 lg:pl-3">
        <div class="flex items-center justify-between">
           <div class="flex items-center justify-start rtl:justify-end">
              <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar"
                 type="button"
-                class="inline-flex items-center p-2 text-sm rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 text-gray-400">
+                class="inline-flex items-center p-2 text-sm rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 
+                {% if session['user_role'] == 'motorizado' %}
+                text-white hover:bg-[#34495e] focus:ring-gray-600
+                {% else %}
+                text-gray-400
+                {% endif %}">
                 <span class="sr-only">Open sidebar</span>
                 <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
                    xmlns="http://www.w3.org/2000/svg">
@@ -69,50 +106,96 @@
                      {% endif %}" 
                 class="flex cursor-pointer items-center justify-center">
                 <img src="{{ url_for('static', filename='img/logo.png')}}" alt="logo" class="h-10 w-10 object-cover">
-                <span class="text-xl text-[#F49A13] font-bold logo_title p-2">MotoRush</span>
+                <span class="text-xl font-bold logo_title p-2 
+                   {% if session['user_role'] == 'admin' %}
+                   text-[#F49A13]
+                   {% elif session['user_role'] == 'motorizado' %}
+                   text-white
+                   {% else %}
+                   text-[#F49A13]
+                   {% endif %}">
+                   MotoRush
+                   {% if session['user_role'] == 'motorizado' %}
+                   <span class="text-sm font-normal">| Motorizado</span>
+                   {% elif session['user_role'] == 'admin' %}
+                   <span class="text-sm font-normal">| Admin</span>
+                   {% endif %}
+                </span>
             </a>
           </div>
           <div class="flex items-center">
+                         
              <div class="flex items-center ms-3">
                 <div>
                    <button type="button"
-                      class="flex text-sm rounded-full ring-2 ring-[#F49A13]"
+                      class="flex text-sm rounded-full 
+                      {% if session['user_role'] == 'admin' %}
+                      ring-2 ring-[#F49A13]
+                      {% elif session['user_role'] == 'motorizado' %}
+                      ring-2 ring-[#3498db]
+                      {% else %}
+                      ring-2 ring-[#F49A13]
+                      {% endif %}"
                       aria-expanded="false" data-dropdown-toggle="dropdown-user">
                       <span class="sr-only">Open user menu</span>
-                      <img class="w-10 h-10 rounded-full object-contain object-cover" src="{{ url_for('static', filename='uploads/' + user['photo']) }}" alt="Foto de perfil" class="rounded-full w-32 h-32">
-
+                      <img class="w-10 h-10 rounded-full object-contain object-cover" src="{{ url_for('static', filename='uploads/' + user['photo']) }}" alt="Foto de perfil">
                    </button>
                 </div>
                 <div
-                   class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm divide-gray-600"
+                   class="z-50 hidden my-4 text-base list-none divide-y divide-gray-100 rounded-sm shadow-sm 
+                   {% if session['user_role'] == 'motorizado' %}
+                   bg-[#2c3e50] divide-gray-700
+                   {% else %}
+                   bg-white divide-gray-600
+                   {% endif %}"
                    id="dropdown-user">
                    <div class="px-4 py-3" role="none">
-                      <p class="text-sm text-gray-900" role="none">
-                         Neil Sims
+                      <p class="text-sm 
+                         {% if session['user_role'] == 'motorizado' %}
+                         text-white
+                         {% else %}
+                         text-gray-900
+                         {% endif %}" role="none">
+                        {{ session['user_name'] }} {{ session['user_last_name'] }}
                       </p>
-                      <p class="text-sm font-medium text-gray-900 truncate text-gray-300" role="none">
-                         neil.sims@flowbite.com
+                      <p class="text-sm font-medium truncate 
+                         {% if session['user_role'] == 'motorizado' %}
+                         text-gray-300
+                         {% else %}
+                         text-gray-900 text-gray-300
+                         {% endif %}" role="none">
+                        {{ session['user_gmail'] }}
                       </p>
                    </div>
                    <ul class="py-1" role="none">
                       <li>
                          <a href="#"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
-                            role="menuitem">Dashboard</a>
+                            class="block px-4 py-2 text-sm 
+                            {% if session['user_role'] == 'motorizado' %}
+                            text-gray-300 hover:bg-[#34495e]
+                            {% else %}
+                            text-gray-700 hover:bg-gray-100 text-gray-300
+                            {% endif %}"
+                            role="menuitem">Mi Perfil</a>
                       </li>
                       <li>
                          <a href="#"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
+                            class="block px-4 py-2 text-sm 
+                            {% if session['user_role'] == 'motorizado' %}
+                            text-gray-300 hover:bg-[#34495e]
+                            {% else %}
+                            text-gray-700 hover:bg-gray-100 text-gray-300
+                            {% endif %}"
                             role="menuitem">Settings</a>
                       </li>
                       <li>
-                         <a href="#"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
-                            role="menuitem">Earnings</a>
-                      </li>
-                      <li>
-                         <a href="#"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
+                         <a href="{{ url_for('logout') }}"
+                            class="block px-4 py-2 text-sm 
+                            {% if session['user_role'] == 'motorizado' %}
+                            text-gray-300 hover:bg-[#34495e]
+                            {% else %}
+                            text-gray-700 hover:bg-gray-100 text-gray-300
+                            {% endif %}"
                             role="menuitem">Sign out</a>
                       </li>
                    </ul>
@@ -123,16 +206,41 @@
     </div>
  </nav>
  
+ <!-- Role-specific sidebar -->
  <aside id="logo-sidebar"
-    class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 "
+    class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full sm:translate-x-0 border-r border-gray-200
+    {% if session['user_role'] == 'admin' %}
+    bg-white
+    {% elif session['user_role'] == 'motorizado' %}
+    bg-[#34495e] text-white
+    {% else %}
+    bg-white
+    {% endif %}"
     aria-label="Sidebar">
-    <div class="h-full px-3 pb-4 overflow-y-auto bg-white">
+    <div class="h-full px-3 pb-4 overflow-y-auto 
+       {% if session['user_role'] == 'admin' %}
+       bg-white
+       {% elif session['user_role'] == 'motorizado' %}
+       bg-[#34495e]
+       {% else %}
+       bg-white
+       {% endif %}">
        <ul class="space-y-2 font-medium">
           <li>
              <a href="{{ url_for('admin_dashboard') if session['user_role'] == 'admin' else url_for('motorizado_dashboard') }}"
-                class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                class="flex items-center p-2 rounded-lg group
+                {% if session['user_role'] == 'admin' %}
+                text-gray-900 hover:bg-gray-100
+                {% elif session['user_role'] == 'motorizado' %}
+                text-white hover:bg-[#2c3e50]
+                {% endif %}">
                 <svg
-                   class="w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
+                   class="w-5 h-5 transition duration-75 
+                   {% if session['user_role'] == 'admin' %}
+                   text-gray-400 group-hover:text-gray-900
+                   {% elif session['user_role'] == 'motorizado' %}
+                   text-gray-300 group-hover:text-white
+                   {% endif %}"
                    aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21">
                    <path
                       d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z" />
@@ -144,16 +252,69 @@
           </li>
           <li>
             <a href="{{ url_for('admin_orders') if session['user_role'] == 'admin' else url_for('motorizado_pedidos') }}"
-               class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+               class="flex items-center p-2 rounded-lg group
+               {% if session['user_role'] == 'admin' %}
+               text-gray-900 hover:bg-gray-100
+               {% elif session['user_role'] == 'motorizado' %}
+               text-white hover:bg-[#2c3e50]
+               {% endif %}">
                <svg
-                  class="shrink-0 w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
+                  class="shrink-0 w-5 h-5 transition duration-75 
+                  {% if session['user_role'] == 'admin' %}
+                  text-gray-400 group-hover:text-gray-900
+                  {% elif session['user_role'] == 'motorizado' %}
+                  text-gray-300 group-hover:text-white
+                  {% endif %}"
                   aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
                   <path
                      d="M17 5.923A1 1 0 0 0 16 5h-3V4a4 4 0 1 0-8 0v1H2a1 1 0 0 0-1 .923L.086 17.846A2 2 0 0 0 2.08 20h13.84a2 2 0 0 0 1.994-2.153L17 5.923ZM7 9a1 1 0 0 1-2 0V7h2v2Zm0-5a2 2 0 1 1 4 0v1H7V4Zm6 5a1 1 0 1 1-2 0V7h2v2Z" />
                </svg>
                <span class="flex-1 ms-3 whitespace-nowrap">Pedidos</span>
+               {% if session['user_role'] == 'admin' %}
+               <span id="pending-orders-badge" class="hidden inline-flex items-center justify-center px-2 py-1 ms-2 text-xs font-bold leading-none text-white bg-primary rounded-full">0</span>
+               {% endif %}
             </a>
          </li>
+         
+         {% if session['user_role'] == 'motorizado' %}
+         <!-- Motorizado-specific menu items -->
+         <li>
+            <a href="" 
+               class="flex items-center p-2 text-white rounded-lg hover:bg-[#2c3e50] group">
+               <svg 
+                  class="shrink-0 w-5 h-5 transition duration-75 text-gray-300 group-hover:text-white"
+                  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 0a10 10 0 1 0 10 10A10.011 10.011 0 0 0 10 0Zm3.982 13.982a1 1 0 0 1-1.414 0l-3.274-3.274A1.012 1.012 0 0 1 9 10V6a1 1 0 0 1 2 0v3.586l2.982 2.982a1 1 0 0 1 0 1.414Z"/>
+               </svg>
+               <span class="flex-1 ms-3 whitespace-nowrap">Historial</span>
+            </a>
+         </li>
+         <li>
+            <a href="" 
+               class="flex items-center p-2 text-white rounded-lg hover:bg-[#2c3e50] group">
+               <svg 
+                  class="shrink-0 w-5 h-5 transition duration-75 text-gray-300 group-hover:text-white"
+                  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 20">
+                  <path d="M8 0a7.992 7.992 0 0 0-6.583 12.535 1 1 0 0 0 .12.183l.12.146c.112.134.227.273.348.403l5.82 6.164a1 1 0 0 0 1.45 0l5.82-6.164.348-.403.12-.146a1.001 1.001 0 0 0 .12-.183A7.992 7.992 0 0 0 8 0Zm0 5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/>
+               </svg>
+               <span class="flex-1 ms-3 whitespace-nowrap">Mapa</span>
+            </a>
+         </li>
+         <li>
+            <a href="" 
+               class="flex items-center p-2 text-white rounded-lg hover:bg-[#2c3e50] group">
+               <svg 
+                  class="shrink-0 w-5 h-5 transition duration-75 text-gray-300 group-hover:text-white"
+                  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21">
+                  <path d="M17 19H5a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3Z" opacity=".3"/>
+                  <path d="M17 21H5a5.006 5.006 0 0 1-5-5V8a5.006 5.006 0 0 1 5-5h12a5.006 5.006 0 0 1 5 5v8a5.006 5.006 0 0 1-5 5ZM5 5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H5Z"/>
+                  <path d="M8 10a1 1 0 0 0-1 1v6a1 1 0 0 0 2 0v-6a1 1 0 0 0-1-1Zm4-2a1 1 0 0 0-1 1v8a1 1 0 0 0 2 0V9a1 1 0 0 0-1-1Zm4 4a1 1 0 0 0-1 1v4a1 1 0 0 0 2 0v-4a1 1 0 0 0-1-1Z"/>
+               </svg>
+               <span class="flex-1 ms-3 whitespace-nowrap">Estadísticas</span>
+            </a>
+         </li>
+         {% endif %}
+         
          {% if session.get('user_role') == 'admin' %}
          <li>
              <a href="{{ url_for('admin_category') }}"
@@ -163,8 +324,6 @@
                   viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path fill-rule="evenodd" clip-rule="evenodd" d="M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zm10 10h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1zM17 3c-2.206 0-4 1.794-4 4s1.794 4 4 4 4-1.794 4-4-1.794-4-4-4zM7 13c-2.206 0-4 1.794-4 4s1.794 4 4 4 4-1.794 4-4-1.794-4-4-4z" fill="currentColor"/>
                </svg>
-            
-
                 <span class="flex-1 ms-3 whitespace-nowrap">Categoria</span>
              </a>
          </li>
@@ -183,21 +342,30 @@
          {% endif %}
           <li>
              <a href="{{ url_for('logout') }}"
-                class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                class="flex items-center p-2 rounded-lg group
+                {% if session['user_role'] == 'admin' %}
+                text-gray-900 hover:bg-gray-100
+                {% elif session['user_role'] == 'motorizado' %}
+                text-white hover:bg-[#2c3e50]
+                {% endif %}">
                 <svg
-                   class="shrink-0 w-5 h-5 transition duration-75 text-gray-400 group-hover:text-gray-900 group-hover"
+                   class="shrink-0 w-5 h-5 transition duration-75 
+                   {% if session['user_role'] == 'admin' %}
+                   text-gray-400 group-hover:text-gray-900
+                   {% elif session['user_role'] == 'motorizado' %}
+                   text-gray-300 group-hover:text-white
+                   {% endif %}"
                    aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 16">
                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M1 8h11m0 0L8 4m4 4-4 4m4-11h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3" />
                 </svg>
-                <span class="flex-1 ms-3 whitespace-nowrap">Sign In</span>
+                <span class="flex-1 ms-3 whitespace-nowrap">Sign Out</span>
              </a>
           </li>
        </ul>
     </div>
  </aside>
  
-
 {% block content %}
 {% endblock %}
     
@@ -209,8 +377,58 @@
 
    {% if session.get('user_role') == 'admin' %}
    <script src="{{ url_for('static', filename='js/admin_orders.js') }}"></script>
+
+   <script>
+      // app/static/js/global.js
+   const socket = io('/admin'); // Conexión global para el admin
+   
+   // Elementos del DOM
+   const pendingOrdersBadge = document.getElementById('pending-orders-badge');
+   
+   // Función para actualizar el contador de pedidos pendientes
+   function updatePendingOrdersCount(count = null) {
+     if (!pendingOrdersBadge) return; // Si no está en la página, salir
+   
+     let pendingCount = count;
+     if (pendingCount === null) {
+       // Si no se pasa un conteo explícito, calcularlo desde localStorage o DOM
+       pendingCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0');
+     }
+   
+     if (pendingCount > 0) {
+       pendingOrdersBadge.textContent = pendingCount;
+       pendingOrdersBadge.classList.remove('hidden');
+     } else {
+       pendingOrdersBadge.classList.add('hidden');
+     }
+   }
+   
+   // Escuchar eventos de Socket.IO
+   socket.on('new_order', function(order) {
+     let currentCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0');
+     currentCount += 1;
+     localStorage.setItem('pendingOrdersCount', currentCount.toString());
+     updatePendingOrdersCount(currentCount);
+   });
+   
+   socket.on('order_status_update', function(order) {
+     // Recalcular el conteo basado en el estado
+     const allPedidos = document.querySelectorAll('.pedido[data-estado="pendiente"]');
+     const pendingCount = allPedidos.length > 0 ? allPedidos.length : parseInt(localStorage.getItem('pendingOrdersCount') || '0');
+     if (order.status !== 'pendiente') {
+       localStorage.setItem('pendingOrdersCount', Math.max(pendingCount - 1, 0).toString());
+     }
+     updatePendingOrdersCount();
+   });
+   
+   // Inicializar al cargar la página
+   window.addEventListener('load', function() {
+     updatePendingOrdersCount();
+   });
+   </script>
    {% else %}
    <script src="{{ url_for('static', filename='js/motorizado_orders.js') }}"></script>
+   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
    {% endif %}
 
 {% block scripts %}
@@ -218,4 +436,3 @@
 
 </body>
 </html>
-

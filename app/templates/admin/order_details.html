@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalles del Pedido</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+{% extends 'base.html' %}
+
+{% block title %}Detalles del Pedido{% endblock %}
+
+{% block style %}
   <style>
     :root {
       --color-primary: #F49A13;
@@ -13,49 +11,72 @@
     .text-primary { color: var(--color-primary); }
     .border-primary { border-color: var(--color-primary); }
     .hover\:bg-primary-dark:hover { background-color: #e08a03; }
+    
+    /* Custom styles for table on small screens */
+    @media (max-width: 640px) {
+      .responsive-table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr;
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+      }
+      .responsive-table td {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem;
+      }
+      .responsive-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6b7280;
+      }
+    }
   </style>
-</head>
-<body class="bg-gray-100 min-h-screen">
-  <div class="container mx-auto px-4 py-8">
+{% endblock %}
+
+{% block content %}
+<main class="flex flex-col sm:ml-64 p-6">
+  <div class="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
       <!-- Header -->
-      <div class="bg-primary p-4 flex justify-between items-center">
-        <h1 class="text-white text-xl font-bold">Detalles del Pedido #{{ order.order_id }}</h1>
-        <span class="bg-white text-primary px-3 py-1 rounded-full font-semibold">{{ order.status|capitalize }}</span>
+      <div class="bg-primary p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h1 class="text-white text-lg sm:text-xl md:text-2xl font-bold">Detalles del Pedido #{{ order.order_id }}</h1>
+        <span class="bg-white text-primary px-3 py-1 rounded-full font-semibold text-sm">{{ order.status|capitalize }}</span>
       </div>
 
-      <!-- Contenido principal -->
-      <div class="p-6">
-        <!-- Información del cliente -->
+      <!-- Main Content -->
+      <div class="p-4 sm:p-6 lg:p-8">
+        <!-- Customer Info -->
         <div class="mb-6">
-          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Información del Cliente</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h2 class="text-base sm:text-lg font-semibold mb-3 border-b pb-2">Información del Cliente</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <p class="text-gray-600 mb-1">Nombre:</p>
+              <p class="text-gray-600 text-sm">Nombre:</p>
               <p class="font-medium">{{ order.client_name }} {{ order.client_last_name }}</p>
             </div>
             <div>
-              <p class="text-gray-600 mb-1">Dirección de Entrega:</p>
-              <p class="font-medium">{{ order.address }}</p>
+              <p class="text-gray-600 text-sm">Dirección de Entrega:</p>
+              <p class="font-medium break-words">{{ order.address }}</p>
             </div>
             <div>
-              <p class="text-gray-600 mb-1">Email:</p>
-              <p class="font-medium">{{ order.client_email }}</p>
+              <p class="text-gray-600 text-sm">Email:</p>
+              <p class="font-medium break-words">{{ order.client_email }}</p>
             </div>
             <div>
-              <p class="text-gray-600 mb-1">Fecha del pedido:</p>
+              <p class="text-gray-600 text-sm">Fecha del pedido:</p>
               <p class="font-medium">{{ order.created_at }}</p>
             </div>
           </div>
         </div>
 
-        <!-- Productos del pedido -->
+        <!-- Order Items -->
         <div class="mb-6">
-          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Productos del Pedido</h2>
+          <h2 class="text-base sm:text-lg font-semibold mb-3 border-b pb-2">Productos del Pedido</h2>
           <div class="overflow-x-auto">
-            <table class="min-w-full">
-              <thead>
-                <tr class="bg-gray-50">
+            <table class="min-w-full responsive-table">
+              <thead class="bg-gray-50 hidden sm:table-header-group">
+                <tr>
                   <th class="px-4 py-2 text-left text-gray-600">Producto</th>
                   <th class="px-4 py-2 text-center text-gray-600">Cantidad</th>
                   <th class="px-4 py-2 text-right text-gray-600">Precio Unit.</th>
@@ -64,18 +85,18 @@
               </thead>
               <tbody>
                 {% for item in order['items'] %}
-                <tr class="border-b">
-                  <td class="px-4 py-3">
+                <tr class="border-b sm:border-b">
+                  <td class="px-4 py-3" data-label="Producto">
                     <div class="flex items-center">
-                      <div class="w-10 h-10 bg-gray-200 rounded mr-3">
-                        <img src="{{ url_for('static', filename='uploads/' ~ item.image) }}" alt="{{ item.name }}" class="w-full h-full object-cover">
+                      <div class="w-10 h-10 bg-gray-200 rounded mr-3 flex-shrink-0">
+                        <img src="{{ url_for('static', filename='uploads/' ~ item.image) }}" alt="{{ item.name }}" class="w-full h-full object-cover rounded">
                       </div>
-                      <span>{{ item.name }}</span>
+                      <span class="text-sm sm:text-base">{{ item.name }}</span>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-center">{{ item.quantity }}</td>
-                  <td class="px-4 py-3 text-right">RD${{ "%.2f"|format(item.price) }}</td>
-                  <td class="px-4 py-3 text-right font-medium">RD${{ "%.2f"|format(item.price * item.quantity) }}</td>
+                  <td class="px-4 py-3 text-center" data-label="Cantidad">{{ item.quantity }}</td>
+                  <td class="px-4 py-3 text-right" data-label="Precio Unit.">RD${{ "%.2f"|format(item.price) }}</td>
+                  <td class="px-4 py-3 text-right font-medium" data-label="Subtotal">RD${{ "%.2f"|format(item.price * item.quantity) }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -89,40 +110,40 @@
           </div>
         </div>
 
-        <!-- Selección de repartidor (solo si el estado es 'pendiente') -->
+        <!-- Assign Delivery (if pending) -->
         {% if order.status == 'pendiente' %}
         <div class="mb-6">
-          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Asignar Repartidor</h2>
+          <h2 class="text-base sm:text-lg font-semibold mb-3 border-b pb-2">Asignar Repartidor</h2>
           {% if motorizados %}
-            <form action="{{ url_for('assign_motorizado', order_id=order.order_id) }}" method="post">
-              <select name="motorizado_id" class="w-full p-2 border rounded mb-4">
+            <form action="{{ url_for('assign_motorizado', order_id=order.order_id) }}" method="post" class="flex flex-col sm:flex-row gap-4">
+              <select name="motorizado_id" class="w-full sm:w-64 p-2 border rounded text-sm">
                 <option value="">Seleccionar repartidor</option>
                 {% for motorizado in motorizados %}
-                <option value="{{ motorizado.id }}">{{ motorizado.name }} {{ motorizado.last_name }} </option>
+                <option value="{{ motorizado.id }}">{{ motorizado.name }} {{ motorizado.last_name }}</option>
                 {% endfor %}
               </select>
-              <button type="submit" class="bg-primary text-white py-2 px-6 rounded-lg font-medium hover:bg-primary-dark">Asignar y Despachar</button>
+              <button type="submit" class="bg-primary text-white py-2 px-6 rounded-lg text-sm font-medium hover:bg-primary-dark">Asignar y Despachar</button>
             </form>
-            {% else %}
-            <p class="text-red-500 font-medium">No hay motorizados disponibles</p>
+          {% else %}
+            <p class="text-red-500 font-medium text-sm">No hay motorizados disponibles</p>
           {% endif %}
         </div>
         {% endif %}
 
-        <!-- Mostrar repartidor asignado (si existe) -->
+        <!-- Assigned Delivery (if exists) -->
         {% if order.motorizado_name %}
         <div class="mb-6">
-          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Repartidor Asignado</h2>
+          <h2 class="text-base sm:text-lg font-semibold mb-3 border-b pb-2">Repartidor Asignado</h2>
           <p class="font-medium">{{ order.motorizado_name }} {{ order.motorizado_last_name }}</p>
         </div>
         {% endif %}
 
-        <!-- Acción final -->
-        <div class="mt-8 flex justify-end">
-          <a href="{{ url_for('admin_orders') }}" class="mr-4 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Volver a Pedidos</a>
+        <!-- Back Button -->
+        <div class="mt-6 flex justify-center sm:justify-end">
+          <a href="{{ url_for('admin_orders') }}" class="w-full sm:w-auto py-2 px-6 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 text-center">Volver a Pedidos</a>
         </div>
       </div>
     </div>
   </div>
-</body>
-</html>
+</main>
+{% endblock %}
