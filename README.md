@@ -34,7 +34,7 @@ Pedidos Motorizados es una aplicación web desarrollada con Flask que facilita l
 ## Instalación y Ejecución Local
 
 1. Clonar el repositorio:
-git clone https://github.com/tu-usuario/pedidos-motorizados.git
+git clone https://github.com/dawary12/App-de-Gesti-n-de-Pedidos-Motorizado.git
 
 2. Crear y activar entorno virtual:
 python -m venv env
