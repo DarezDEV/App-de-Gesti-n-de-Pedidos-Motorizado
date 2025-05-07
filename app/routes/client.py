@@ -638,7 +638,6 @@ class CartController:
 
     @staticmethod
     def get_cart_data():
-        """Endpoint para obtener datos del carrito para actualización dinámica"""
         user_id = session.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Usuario no autenticado'}), 401
