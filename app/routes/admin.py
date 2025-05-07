@@ -1,13 +1,16 @@
 # app/routes/admin.py
 import os
 import uuid
-from flask import jsonify, render_template, session, redirect, url_for, flash, request
+import tempfile
+from flask import jsonify, render_template, session, redirect, url_for, flash, request, send_file, make_response
 from werkzeug.utils import secure_filename
 from app.db import get_db_connection
 from app.routes.service import UserService, FileService
 from app import UPLOAD_FOLDER, socketio
+import pdfkit
+from datetime import datetime
 
-user_service = UserService() 
+user_service = UserService()
 
 class AdminController:
     def __init__(self, dashboard_service, user_service: UserService, file_service: FileService):
@@ -26,41 +29,38 @@ class AdminController:
     def admin_dashboard(self):
         if self.check_admin_permission():
             return self.check_admin_permission()
+
         user = self.dashboard_service.get_user_info()
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        
-        # Total de ventas
+
+        # Ventas totales y ingresos totales
         cursor.execute("SELECT COUNT(*) as total, SUM(total_amount) as revenue FROM orders WHERE status = 'entregado'")
         sales_data = cursor.fetchone()
-        total_sales = sales_data['total'] or 0
-        total_revenue = float(sales_data['revenue'] or 0)
-        
+
         # Pedidos pendientes
-        cursor.execute("SELECT COUNT(*) as count FROM orders WHERE status = 'pendiente'")
-        pending_orders = cursor.fetchone()['count']
-        
+        cursor.execute("SELECT COUNT(*) as total FROM orders WHERE status = 'pendiente'")
+        pending_orders = cursor.fetchone()['total']
+
         # Pedidos en camino
-        cursor.execute("SELECT COUNT(*) as count FROM orders WHERE status = 'en camino'")
-        in_progress_orders = cursor.fetchone()['count']
-        
-        # Total usuarios
-        cursor.execute("SELECT COUNT(*) as count FROM users WHERE rol = 'cliente' AND status = 'activo'")
-        active_users = cursor.fetchone()['count']
-        
-        # Top 5 productos más vendidos
+        cursor.execute("SELECT COUNT(*) as total FROM orders WHERE status = 'en camino'")
+        in_progress_orders = cursor.fetchone()['total']
+
+        # Usuarios activos
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE status = 'activo'")
+        active_users = cursor.fetchone()['total']
+
+        # Productos más vendidos
         cursor.execute("""
-            SELECT p.name, SUM(oi.quantity) as total_sold
+            SELECT p.name, COUNT(oi.quantity) as total_sold
             FROM order_items oi
             JOIN products p ON oi.product_id = p.id
-            JOIN orders o ON oi.order_id = o.id
-            WHERE o.status = 'entregado'
-            GROUP BY p.id
+            GROUP BY p.id, p.name
             ORDER BY total_sold DESC
             LIMIT 5
         """)
         top_products = cursor.fetchall()
-        
+
         # Ventas por categoría
         cursor.execute("""
             SELECT c.name, COUNT(o.id) as order_count, SUM(o.total_amount) as total_revenue
@@ -69,38 +69,71 @@ class AdminController:
             JOIN products p ON oi.product_id = p.id
             JOIN categories c ON p.category_id = c.id
             WHERE o.status = 'entregado'
-            GROUP BY c.id
-            ORDER BY total_revenue DESC
+            GROUP BY c.id, c.name
         """)
         category_sales = cursor.fetchall()
-        
-        # Ventas por mes (últimos 6 meses)
+
+        # Ventas semanales
         cursor.execute("""
-            SELECT 
-                DATE_FORMAT(created_at, '%Y-%m') as month,
-                COUNT(*) as order_count,
-                SUM(total_amount) as revenue
+            SELECT WEEK(created_at) as week_number, YEAR(created_at) as year, SUM(total_amount) as weekly_revenue
             FROM orders
             WHERE status = 'entregado'
-            GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-            ORDER BY month DESC
+            GROUP BY week_number, year
+            ORDER BY year, week_number
             LIMIT 6
         """)
-        monthly_sales = cursor.fetchall()
-        monthly_sales.reverse()  # Para mostrar en orden cronológico
-        
+        weekly_sales = cursor.fetchall()
+
+        # Evaluaciones recientes
+        cursor.execute("""
+            SELECT u.name, u.last_name, r.rating, r.comment
+            FROM reviews r
+            JOIN users u ON r.user_id = u.id
+            ORDER BY r.created_at DESC
+            LIMIT 5
+        """)
+        recent_evaluations = cursor.fetchall()
+
+        # Distribución de calificaciones
+        cursor.execute("SELECT rating, COUNT(*) as count FROM reviews GROUP BY rating")
+        rating_counts = cursor.fetchall()
+        ratings_distribution = [0, 0, 0, 0, 0]
+        for rating in rating_counts:
+            if 1 <= rating['rating'] <= 5:
+                ratings_distribution[rating['rating'] - 1] = rating['count']
+
+        # Desempeño de motorizados
+        cursor.execute("""
+            SELECT 
+                u.id AS motorizado_id,
+                CONCAT(u.name, ' ', u.last_name) AS motorizado_name,
+                COUNT(o.id) AS total_deliveries,
+                AVG(e.rating) AS avg_rating
+            FROM users u
+            LEFT JOIN orders o ON u.id = o.motorizado_id AND o.status = 'entregado'
+            LEFT JOIN evaluations e ON o.id = e.order_id
+            WHERE u.rol = 'motorizado'
+            GROUP BY u.id, u.name, u.last_name
+            ORDER BY total_deliveries DESC
+            LIMIT 5
+        """)
+        delivery_performance = cursor.fetchall()
+
         cursor.close()
         conn.close()
-        
+
         statistics = {
-            'total_sales': total_sales,
-            'total_revenue': total_revenue,
+            'total_sales': sales_data['total'],
+            'total_revenue': sales_data['revenue'] or 0,
             'pending_orders': pending_orders,
             'in_progress_orders': in_progress_orders,
             'active_users': active_users,
             'top_products': top_products,
             'category_sales': category_sales,
-            'monthly_sales': monthly_sales
+            'weekly_sales': weekly_sales if weekly_sales else [],
+            'recent_evaluations': recent_evaluations,
+            'ratings_distribution': ratings_distribution,
+            'delivery_performance': delivery_performance
         }
 
         return render_template('admin/admin.html', user=user, stats=statistics)
@@ -109,8 +142,35 @@ class AdminController:
         if self.check_admin_permission():
             return self.check_admin_permission()
         user = self.dashboard_service.get_user_info()
-        users = self.user_service.get_all_users()
+        users = self.user_service.get_active_users()
         return render_template('admin/adminUsers.html', users=users, user=user)
+    
+    def admin_disabled_users(self):
+        if self.check_admin_permission():
+            return self.check_admin_permission()
+        user = self.dashboard_service.get_user_info()
+        disabled_users = self.user_service.get_disabled_users()
+        return render_template('admin/adminDisabledUsers.html', users=disabled_users, user=user)
+    
+    def disable_user(self, user_id):
+        if self.check_admin_permission():
+            return self.check_admin_permission()
+        try:
+            self.user_service.disable_user(user_id)
+            flash('Usuario deshabilitado correctamente', 'success')
+        except Exception as e:
+            flash(str(e), 'error')
+        return redirect(url_for('admin_users'))
+    
+    def enable_user(self, user_id):
+        if self.check_admin_permission():
+            return self.check_admin_permission()
+        try:
+            self.user_service.enable_user(user_id)
+            flash('Usuario habilitado correctamente', 'success')
+        except Exception as e:
+            flash(str(e), 'error')
+        return redirect(url_for('admin_disabled_users'))
 
     def create_user(self):
         if self.check_admin_permission():
@@ -150,44 +210,6 @@ class AdminController:
         except Exception as e:
             flash(str(e), 'error')
         return redirect(url_for('admin_users'))
-    
-    def admin_users(self):
-        if self.check_admin_permission():
-            return self.check_admin_permission()
-        user = self.dashboard_service.get_user_info()
-        users = self.user_service.get_active_users()
-        return render_template('admin/adminUsers.html', users=users, user=user)
-    
-    def admin_disabled_users(self):
-        if self.check_admin_permission():
-            return self.check_admin_permission()
-        user = self.dashboard_service.get_user_info()
-        disabled_users = self.user_service.get_disabled_users()
-        return render_template('admin/adminDisabledUsers.html', users=disabled_users, user=user)
-    
-    def disable_user(self, user_id):
-        if self.check_admin_permission():
-            return self.check_admin_permission()
-        try:
-            self.user_service.disable_user(user_id)
-            flash('Usuario deshabilitado correctamente', 'success')
-        except Exception as e:
-            flash(str(e), 'error')
-        return redirect(url_for('admin_users'))
-    
-    def enable_user(self, user_id):
-        if self.check_admin_permission():
-            return self.check_admin_permission()
-        try:
-            self.user_service.enable_user(user_id)
-            flash('Usuario habilitado correctamente', 'success')
-        except Exception as e:
-            flash(str(e), 'error')
-        return redirect(url_for('admin_disabled_users'))
-
-    def profile(self, user_id):
-        user = self.user_service.get_user_by_id(user_id)
-        return render_template('admin/profile.html', user=user)
     
     def admin_category(self):
         if self.check_admin_permission():
@@ -308,17 +330,26 @@ class AdminController:
             main_image = request.files['main_image']
             image2 = request.files.get('image2')
             image3 = request.files.get('image3')
+            
             main_image_filename = ''
+            image2_filename = ''
+            image3_filename = ''
+            
+            # Handle main_image
             if main_image and UserService.allowed_file(main_image.filename):
-                filename = secure_filename(main_image.filename)
-                main_image.save(os.path.join(UPLOAD_FOLDER, filename))
-                main_image_filename = filename
-            image2_filename = '' if not image2 else secure_filename(image2.filename)
-            image3_filename = '' if not image3 else secure_filename(image3.filename)
+                main_image_filename = secure_filename(f"{uuid.uuid4()}_{main_image.filename}")
+                main_image.save(os.path.join(UPLOAD_FOLDER, main_image_filename))
+            
+            # Handle image2
             if image2 and UserService.allowed_file(image2.filename):
+                image2_filename = secure_filename(f"{uuid.uuid4()}_{image2.filename}")
                 image2.save(os.path.join(UPLOAD_FOLDER, image2_filename))
+            
+            # Handle image3
             if image3 and UserService.allowed_file(image3.filename):
+                image3_filename = secure_filename(f"{uuid.uuid4()}_{image3.filename}")
                 image3.save(os.path.join(UPLOAD_FOLDER, image3_filename))
+            
             conn = get_db_connection()
             cursor = conn.cursor()
             query = """
@@ -330,8 +361,9 @@ class AdminController:
             conn.commit()
             cursor.close()
             conn.close()
-        flash('Producto creado exitosamente', 'success')
-        return redirect(url_for('category_products', category_id=category_id))
+            
+            flash('Producto creado exitosamente', 'success')
+            return redirect(url_for('category_products', category_id=category_id))
 
     def update_product(self, product_id, category_id):
         if self.check_admin_permission():
@@ -402,16 +434,26 @@ class AdminController:
     def delete_product(self, product_id, category_id):
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        # Retrieve product images to delete them from the filesystem
         cursor.execute('SELECT image, image2, image3 FROM products WHERE id = %s', (product_id,))
         product = cursor.fetchone()
+
+        # Delete associated order_items
+        cursor.execute('DELETE FROM order_items WHERE product_id = %s', (product_id,))
+
+        # Delete the product
+        cursor.execute('DELETE FROM products WHERE id = %s', (product_id,))
+
+        # Delete product images from the filesystem
         if product:
             for img in product:
                 if img:
                     try:
                         os.remove(os.path.join(UPLOAD_FOLDER, img))
-                    except:
-                        pass
-        cursor.execute('DELETE FROM products WHERE id = %s', (product_id,))
+                    except Exception as e:
+                        print(f"Error removing image {img}: {str(e)}")
+
         conn.commit()
         cursor.close()
         conn.close()
@@ -535,4 +577,84 @@ class AdminController:
         finally:
             cursor.close()
             conn.close()
+        flash('Motorizado asignado', 'success')
         return redirect(url_for("order_details", order_id=order_id))
+
+    def generate_motorizado_report(self):
+        if self.check_admin_permission():
+            return self.check_admin_permission()
+
+        # Fetch motorizado performance data
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT 
+                u.id AS motorizado_id,
+                CONCAT(u.name, ' ', u.last_name) AS motorizado_name,
+                COUNT(o.id) AS total_deliveries,
+                AVG(e.rating) AS avg_rating
+            FROM users u
+            LEFT JOIN orders o ON u.id = o.motorizado_id AND o.status = 'entregado'
+            LEFT JOIN evaluations e ON o.id = e.order_id
+            WHERE u.rol = 'motorizado'
+            GROUP BY u.id, u.name, u.last_name
+            ORDER BY total_deliveries DESC
+        """)
+        motorizados = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        # Render HTML template
+        current_date = datetime.now().strftime('%d/%m/%Y')
+        html = render_template('admin/motorizado_report.html', motorizados=motorizados, current_date=current_date)
+
+        # Configuración de wkhtmltopdf para Windows
+        config = pdfkit.configuration(wkhtmltopdf='C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
+        
+        # Convert HTML to PDF con la configuración específica
+        try:
+            pdf = pdfkit.from_string(html, False, configuration=config)
+            response = make_response(pdf)
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = 'attachment; filename=motorizado_performance_report.pdf'
+            return response
+        except Exception as e:
+            flash(f'Error al generar el reporte PDF: {str(e)}', 'error')
+            return redirect(url_for('admin_dashboard'))
+
+    def generate_top_products_report(self):
+        if self.check_admin_permission():
+            return self.check_admin_permission()
+
+        # Fetch top products data
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT p.name, COUNT(oi.quantity) as total_sold
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            GROUP BY p.id, p.name
+            ORDER BY total_sold DESC
+            LIMIT 10
+        """)
+        products = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        # Render HTML template
+        current_date = datetime.now().strftime('%d/%m/%Y')
+        html = render_template('admin/top_products_report.html', products=products, current_date=current_date)
+
+        # Configuración de wkhtmltopdf para Windows
+        config = pdfkit.configuration(wkhtmltopdf='C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
+        
+        # Convert HTML to PDF con la configuración específica
+        try:
+            pdf = pdfkit.from_string(html, False, configuration=config)
+            response = make_response(pdf)
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = 'attachment; filename=top_products_report.pdf'
+            return response
+        except Exception as e:
+            flash(f'Error al generar el reporte PDF: {str(e)}', 'error')
+            return redirect(url_for('admin_dashboard'))

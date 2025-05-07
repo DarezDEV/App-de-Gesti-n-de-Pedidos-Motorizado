@@ -1,483 +1,1045 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seguimiento de Pedido #{{ order_id }}</title>
+{% extends 'baseClient.html' %}
+
+{% block title %}Navegación - Pedido #{{ order_id }}{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<style>
+    /* Mejorar la integración con el layout base */
+    .tracking-container {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
     
-    <!-- Estilos de Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
-          crossorigin=""/>
+    .tracking-title {
+        color: #333;
+        line-height: 1.2;
+    }
     
-    <!-- Estilos de Leaflet Routing Machine -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    .map-wrapper {
+        position: relative;
+        flex: 1;
+    }
     
-    <!-- Estilos propios -->
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
+    .map-container {
+        height: 65vh;
+        width: 100%;
+        z-index: 1;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .info-panel-wrapper {
+        border-left: 1px solid #eee;
+    }
+    
+    .status-panel {
+        background-color: white;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    
+    .info-panel {
+        padding: 15px;
+        background-color: #fff;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .location-status {
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .location-active {
+        background-color: #F49A13;
+        color: white;
+    }
+    
+    .location-inactive {
+        background-color: #f8f8f8;
+        color: #666;
+        border: 1px solid #eee;
+    }
+    
+    .info-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .info-header {
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .info-icon {
+        font-size: 24px;
+        margin-right: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background-color: rgba(244, 154, 19, 0.1);
+        border-radius: 50%;
+    }
+    
+    .info-title {
+        flex: 1;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background-color: #F49A13;
+        color: white;
+        border-radius: 20px;
+        font-size: 14px;
+        margin: 0;
+    }
+    
+    .info-content {
+        color: #555;
+        line-height: 1.6;
+    }
+    
+    .direction-details {
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 0 15px 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .detail-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    
+    .detail-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .detail-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        margin-right: 12px;
+        color: #F49A13;
+    }
+    
+    /* Botón de control */
+    .tracking-button {
+        background-color: #F49A13;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: none;
+    }
+    
+    .tracking-button:hover {
+        background-color: #e58c00;
+        transform: translateY(-1px);
+    }
+    
+    #btnIniciarEntrega {
+        background-color: #28a745;
+    }
+    
+    #btnIniciarEntrega:hover {
+        background-color: #218838;
+    }
+    
+    /* Estilos para los controles del mapa */
+    .leaflet-bar a {
+        background-color: white;
+        color: #333;
+        border: 1px solid #ddd;
+        transition: all 0.2s ease;
+        width: 12px !important;
+        height: 12px !important;
+        line-height: 12px !important;
+    }
+    
+    .leaflet-bar a:hover {
+        background-color: #F49A13;
+        color: white;
+        border-color: #F49A13;
+    }
+    
+    .leaflet-control-zoom {
+        margin: 12px !important;
+    }
+    
+    /* Personalizaciones para Leaflet Routing Machine */
+    .leaflet-routing-container {
+        width: 50%;
+        background-color: white;
+        padding: 12px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-height: 300px;
+        overflow-y: auto;
+        font-family: 'Poppins', sans-serif;
+        margin: 12px !important;
+    }
+    
+    .leaflet-routing-alt {
+        max-height: none;
+    }
+    
+    .leaflet-routing-alt h2 {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        font-family: 'Poppins', sans-serif !important;
+    }
+    
+    .leaflet-routing-alt h3 {
+        font-size: 14px !important;
+        font-family: 'Poppins', sans-serif !important;
+    }
+    
+    .leaflet-routing-icon {
+        background-color: #F49A13 !important;
+    }
+    
+    .leaflet-routing-container-hide {
+        right: -360px !important;
+    }
+
+    /* Clases de animaciones */
+    .pulse-marker {
+        animation: pulse-animation 2s infinite;
+    }
+    
+    @keyframes pulse-animation {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.2);
+            opacity: 0.7;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .fade-in {
+        animation: fadein 0.5s ease-in-out;
+    }
+    
+    @keyframes fadein {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    /* Personalización para marcadores */
+    .custom-marker {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    
+    .motorizado-marker {
+        background-color: #333;
+        color: white;
+        border: 2px solid #F49A13;
+    }
+    
+    .cliente-marker {
+        background-color: #F49A13;
+        color: white;
+        border: 2px solid white;
+    }
+    
+    .custom-marker i {
+        font-size: 18px;
+    }
+    
+    /* Ajustes para mejorar la adaptación con base.html */
+    @media (max-width: 640px) {
+        main {
+            padding: 1rem !important;
         }
         
-        #map {
-            height: 80vh;
-            width: 100%;
-            z-index: 1;
+        .tracking-container {
+            margin-top: 0;
         }
         
-        .status-panel {
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
+        .info-card, .direction-details {
+            margin: 10px;
+            padding: 12px;
         }
         
-        .info-panel {
-            padding: 10px 15px;
-            background-color: #fff;
-            border-top: 1px solid #dee2e6;
-            position: relative;
-            z-index: 2;
+        .map-container {
+            height: 50vh;
         }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Ajustando la estructura para adaptarse mejor al layout base -->
+<main class="flex flex-col p-4 sm:p-6 pt-20 sm:pt-6">
+    <nav class="flex justify-start w-full mb-4 z-10" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{{ url_for('client_orders') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-amber-500">
+                    Pedidos
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    <a href="{{ url_for('order_details_client', order_id=order_id) }}" class="ml-1 text-sm font-medium text-gray-700 hover:text-amber-500 md:ml-2">Detalles del Pedido #{{ order_id }}</a>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Pedido #{{ order_id }}</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+    <div class="tracking-container bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="status-panel p-4 sm:p-5 border-b border-gray-100">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <h3 class="tracking-title text-xl sm:text-2xl font-bold text-gray-800">Navegación a Destino - Pedido #{{ order_id }}</h3>
+                <div id="statusMessage" class="location-status location-inactive text-sm sm:text-base">
+                    Esperando datos de ubicación...
+                </div>
+            </div>
+        </div>
         
-        .location-status {
-            padding: 8px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-        
-        .location-active {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .location-inactive {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        
-        .btn-update-location {
-            margin-top: 10px;
-            padding: 8px 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .btn-update-location:hover {
-            background-color: #0069d9;
-        }
-        
-        .btn-update-location:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-        }
-        
-        .direction-details {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body>
-    <div class="status-panel">
-        <h3>Seguimiento de Pedido #{{ order_id }}</h3>
-        <div id="statusMessage" class="location-status location-inactive">
-            Esperando datos de ubicación...
+        <div class="flex flex-col lg:flex-row">
+            <!-- Mapa contenedor - más grande en móvil -->
+            <div class="map-wrapper w-full lg:w-3/4">
+                <div id="map" class="map-container"></div>
+            </div>
+            
+            <!-- Panel de información lateral - se convierte en un panel inferior en móvil -->
+            <div class="info-panel-wrapper w-full lg:w-1/4 bg-gray-50">
+                <div class="sticky top-16">
+                    <div id="locationInfo" class="info-card">
+                        <div class="info-header">
+                            <span class="info-icon">🏠</span>
+                            <div class="info-title">
+                                <h4 class="text-lg font-semibold">Información del Pedido</h4>
+                            </div>
+                        </div>
+                        <div class="info-content mt-3">
+                            <p class="flex items-center mb-2">
+                                <span class="detail-icon"><i class="fas fa-user"></i></span>
+                                <span><strong> Motorizado:</strong> {{ motorizado_name }}</span>
+                            </p>
+                            <p class="flex items-center">
+                                <span class="detail-icon"><i class="fas fa-map-marker-alt"></i></span>
+                                <span><strong>Dirección:</strong> {{ order.address }}</span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="direction-details" id="directionDetails">
+                        <div class="detail-item">
+                            <span class="detail-icon"><i class="fas fa-route"></i></span>
+                            <p>Distancia estimada: <span id="distanceValue">Calculando...</span></p>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon"><i class="far fa-clock"></i></span>
+                            <p>Tiempo estimado: <span id="timeValue">Calculando...</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="tracking-controls flex justify-center my-4 px-4">
+                        <button id="centerMapButton" class="tracking-button flex items-center justify-center">
+                            <i class="fas fa-location-arrow mr-2"></i> Centrar mapa
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div id="map"></div>
-    
-    <div class="info-panel">
-        <div id="locationInfo">
-            <p><strong>Estado del pedido:</strong> <span id="orderStatus">{{ order.status }}</span></p>
-            <p><strong>Motorizado:</strong> {{ motorizado_name }}</p>
-            <p><strong>Dirección de entrega:</strong> {{ order.address }}</p>
-        </div>
-        
-        <div class="direction-details" id="directionDetails">
-            <p>Distancia estimada: <span id="distanceValue">Calculando...</span></p>
-            <p>Tiempo estimado: <span id="timeValue">Calculando...</span></p>
+    <!-- Modal de información -->
+    <div id="infoModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Información para el  Cliente</h3>
+                <button id="closeInfoModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p class="text-gray-600 mb-3">Esta pantalla te permite ver la ubicación del motorizado. El motorizado también puede ver tu posición mientra se dirige al destino (a ti).</p>
+            <div class="flex flex-col space-y-3 mb-4">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-800 border-2 border-[#F49A13] mr-3">
+                        <i class="fas fa-motorcycle text-white"></i>
+                    </div>
+                    <span class="text-gray-700">Ubicación del Motorizado</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center bg-[#F49A13] border-2 border-white mr-3">
+                        <i class="fas fa-home text-white"></i>
+                    </div>
+                    <span class="text-gray-700">Tu ubicación (cliente)</span>
+                </div>
+            </div>
+            <button id="confirmInfoModal" class="w-full py-2 bg-[#F49A13] hover:bg-[#e58c00] text-white font-medium rounded-lg transition-colors">
+                Entendido
+            </button>
         </div>
     </div>
-    
-    <!-- Socket.IO -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js"></script>
-    
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
-            crossorigin=""></script>
-    
-    <!-- Leaflet Routing Machine -->
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    
-    <!-- Script principal -->
-    <script>
-        // Configuración base del mapa
-        let map, userMarker, targetMarker, routingControl;
-        let userPosition = null;
-        let targetPosition = null;
-        let isTrackingActive = false;
-        let socket;
-        let currentOrderId = '{{ order_id }}';
-        
-        // Inicializar socket.io
-        function initSocket() {
-            socket = io();
-            
-            // Escuchar eventos de actualización de ubicación
-            socket.on('location_update_' + currentOrderId, function(data) {
-                console.log('Recibida actualización de ubicación:', data);
-                updateMapMarkers(data);
-            });
-            
-            // Escuchar cambios de estado del pedido
-            socket.on('order_status_update', function(data) {
-                if (data.order_id == currentOrderId) {
-                    document.getElementById('orderStatus').textContent = data.status;
-                    
-                    if (data.status === 'entregado') {
-                        stopTracking();
-                        showNotification('Pedido entregado correctamente');
-                    }
-                }
-            });
-        }
-        
-        // Función para mostrar notificaciones
-        function showNotification(message) {
-            const statusMessage = document.getElementById('statusMessage');
-            statusMessage.textContent = message;
-            statusMessage.className = 'location-status location-active';
-            
-            setTimeout(() => {
-                statusMessage.className = 'location-status location-inactive';
-                statusMessage.textContent = 'Esperando datos de ubicación...';
-            }, 5000);
-        }
-        
-        // Función para actualizar la ruta en el mapa
-        function updateRoute() {
-            if (userPosition && targetPosition) {
-                if (routingControl) {
-                    map.removeControl(routingControl);
-                }
-                
-                routingControl = L.Routing.control({
-                    waypoints: [
-                        L.latLng(userPosition.lat, userPosition.lng),
-                        L.latLng(targetPosition.lat, targetPosition.lng)
-                    ],
-                    routeWhileDragging: false,
-                    addWaypoints: false,
-                    draggableWaypoints: false,
-                    fitSelectedRoutes: true,
-                    showAlternatives: false,
-                    router: L.Routing.osrmv1({
-                        serviceUrl: 'https://router.project-osrm.org/route/v1',
-                        profile: 'driving'
-                    })
-                }).on('routesfound', function(e) {
-                    const routes = e.routes;
-                    const summary = routes[0].summary;
-                    
-                    // Actualizar información de distancia y tiempo
-                    document.getElementById('distanceValue').textContent = 
-                        (summary.totalDistance / 1000).toFixed(2) + ' km';
-                    
-                    document.getElementById('timeValue').textContent = 
-                        Math.round(summary.totalTime / 60) + ' minutos';
-                }).addTo(map);
-            }
-        }
-        
-        // Función para enviar actualizaciones de ubicación al servidor
-        function sendLocationUpdate(position) {
-            if (!isTrackingActive) return;
-            
-            const locationData = {
-                order_id: currentOrderId,
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude
-            };
-            
-            fetch('/actualizar-ubicacion', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(locationData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Ubicación actualizada correctamente');
-                } else {
-                    console.error('Error al actualizar ubicación:', data.message);
-                }
+</main>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<script>
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/js/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registrado:', registration);
             })
             .catch(error => {
-                console.error('Error en la solicitud:', error);
+                console.error('Error al registrar el Service Worker:', error);
             });
-        }
+    });
+}
+
+// Configuración Socket.io con reconexión automática
+const socket = io('/gps', {
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000
+});
+
+const orderId = {{ order_id | tojson }};
+const userRole = '{{ session.user_role }}'; // 'cliente' o 'motorizado'
+
+// Detección y adaptación al tamaño de pantalla
+const isMobile = window.innerWidth < 768;
+
+// Configuración del mapa con opciones mejoradas para rendimiento
+const map = L.map('map', {
+    zoomControl: false, // Controlaremos el zoom con nuestro propio control
+    attributionControl: false,
+    preferCanvas: true,  // Usar Canvas en lugar de SVG para mejor rendimiento
+    minZoom: 3,
+    maxZoom: 19,
+    zoomSnap: 0.5,      // Permite zoom más suave
+    zoomDelta: 0.5,     // Incrementos más pequeños para mejor control
+    wheelDebounceTime: 100, // Reduce la frecuencia de eventos de zoom con rueda
+    wheelPxPerZoomLevel: 100, // Más píxeles para cada nivel de zoom, control más fino
+    bounceAtZoomLimits: false, // Previene el efecto de rebote en los límites de zoom
+    // Deshabilitar el arrastre y el zoom por defecto en móviles para mejor rendimiento
+    // Luego los habilitaremos cuando el mapa esté completamente cargado
+    dragging: !isMobile,
+    tap: !isMobile
+}).setView([0, 0], 15);
+
+// Agregar controles de zoom personalizados para mejor posicionamiento
+L.control.zoom({
+    position: 'bottomright',
+    zoomInTitle: 'Acercar',
+    zoomOutTitle: 'Alejar'
+}).addTo(map);
+
+// Usar servidor de tiles más rápido y con menos detalles para mayor velocidad
+// Usar tiles vectoriales cuando sea posible para menor consumo de datos
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    minZoom: 3,
+    // Optimizaciones para carga de tiles
+    updateWhenIdle: true,  // Solo carga tiles cuando el mapa está quieto (ahorra ancho de banda)
+    updateWhenZooming: false, // No actualiza tiles durante el zoom (más suavidad)
+    // Limita el número de tiles que se cargan de una vez
+    keepBuffer: isMobile ? 1 : 2,
+    // Pre-carga de tiles para mejor experiencia
+    tileSize: 256,
+    // Carga de tiles más rápida usando subdominios
+    subdomains: 'abcd',
+}).addTo(map);
+
+// Iconos optimizados para diferentes densidades de píxeles
+const motorizadoIcon = L.divIcon({
+    className: 'custom-marker motorizado-marker',
+    html: '<i class="fas fa-motorcycle"></i>',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+});
+
+const clienteIcon = L.divIcon({
+    className: 'custom-marker cliente-marker',
+    html: '<i class="fas fa-home"></i>',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+});
+
+// Variables para el control de la ruta
+let motorizadoMarker = null;
+let clienteMarker = null;
+let routingControl = null;
+let lastMotorizadoPos = null;
+let lastClientePos = null;
+let lastRouteCalcTime = 0;
+let isInitialPositionSet = false;
+const ROUTE_THROTTLE_MS = isMobile ? 5000 : 3000; // Limitar cálculo de ruta según dispositivo
+
+// Función para centrar el mapa en ambas ubicaciones
+function centerOnBothMarkers() {
+    if (lastMotorizadoPos && lastClientePos) {
+        // Crear un grupo con ambos puntos para centrar el mapa
+        const group = new L.FeatureGroup([
+            L.marker(lastMotorizadoPos),
+            L.marker(lastClientePos)
+        ]);
         
-        // Función para iniciar el seguimiento de ubicación
-        function startTracking() {
-            if (!navigator.geolocation) {
-                showNotification('La geolocalización no es compatible con este navegador');
-                return;
-            }
-            
-            isTrackingActive = true;
-            
-            // Solicitar la posición actual y seguir actualizándola
-            navigator.geolocation.getCurrentPosition(
-                position => {
-                    console.log('Posición inicial obtenida');
-                    updateUserPosition({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    });
-                    
-                    // Enviar la ubicación inicial al servidor
-                    sendLocationUpdate(position);
-                    
-                    // Configurar seguimiento continuo
-                    const watchId = navigator.geolocation.watchPosition(
-                        position => {
-                            updateUserPosition({
-                                lat: position.coords.latitude,
-                                lng: position.coords.longitude
-                            });
-                            sendLocationUpdate(position);
-                        },
-                        error => {
-                            console.error('Error al obtener la ubicación:', error);
-                            showNotification('Error al obtener la ubicación: ' + getPositionErrorMessage(error));
-                            isTrackingActive = false;
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            maximumAge: 10000,
-                            timeout: 10000
-                        }
-                    );
-                    
-                    // Guardar ID del watcher para poder cancelarlo después
-                    window.locationWatchId = watchId;
-                    
-                    const statusMessage = document.getElementById('statusMessage');
-                    statusMessage.textContent = 'Seguimiento activo';
-                    statusMessage.className = 'location-status location-active';
-                },
-                error => {
-                    console.error('Error al obtener la ubicación inicial:', error);
-                    showNotification('Error al obtener la ubicación inicial: ' + getPositionErrorMessage(error));
-                    isTrackingActive = false;
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000
+        // Ajustar la vista con un pequeño padding para mejor visualización
+        const padding = isMobile ? [30, 30] : [50, 50];
+        map.fitBounds(group.getBounds().pad(0.2), {
+            padding: padding,
+            maxZoom: 17,
+            animate: true,
+            duration: 0.5
+        });
+    } else if (lastMotorizadoPos) {
+        map.setView(lastMotorizadoPos, 17, {animate: true});
+    } else if (lastClientePos) {
+        map.setView(lastClientePos, 17, {animate: true});
+    }
+}
+
+// Mejorar el watchPosition para obtener actualizaciones más eficientes y precisas
+function setupGeolocation() {
+    if (navigator.geolocation) {
+        // Optimizaciones para diferentes dispositivos
+        const watchOptions = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: isMobile ? 1000 : 0 // En móviles permitimos cache de 1s para ahorrar batería
+        };
+
+        // Sistema de buffer para enviar actualizaciones eficientemente
+        let positionBuffer = null;
+        let bufferTimeoutId = null;
+        let consecutiveErrorCount = 0;
+        
+        // Función para enviar ubicación acumulada
+        const sendBufferedPosition = () => {
+            if (positionBuffer) {
+                // Enviar ubicación al servidor
+                socket.emit('update_location', {
+                    order_id: orderId,
+                    lat: positionBuffer.lat,
+                    lon: positionBuffer.lon,
+                    role: userRole,
+                    accuracy: positionBuffer.accuracy || null, // Enviar precisión si está disponible
+                    timestamp: Date.now()
+                });
+                
+                // Actualizar estado local con información de calidad
+                const statusMsg = positionBuffer.accuracy && positionBuffer.accuracy > 50 
+                    ? `Ubicación activa (±${Math.round(positionBuffer.accuracy)}m)` 
+                    : 'Ubicación activa';
+                
+                document.getElementById('statusMessage').textContent = statusMsg;
+                document.getElementById('statusMessage').classList.remove('location-inactive');
+                document.getElementById('statusMessage').classList.add('location-active');
+                
+                // Actualizar marcador local para feedback instantáneo
+                if (userRole === 'motorizado') {
+                    updateOwnMarker([positionBuffer.lat, positionBuffer.lon], motorizadoIcon, positionBuffer.accuracy);
+                } else {
+                    updateOwnMarker([positionBuffer.lat, positionBuffer.lon], clienteIcon, positionBuffer.accuracy);
                 }
-            );
-        }
-        
-        // Función para detener el seguimiento de ubicación
-        function stopTracking() {
-            if (window.locationWatchId) {
-                navigator.geolocation.clearWatch(window.locationWatchId);
-                window.locationWatchId = null;
+                
+                positionBuffer = null;
+                consecutiveErrorCount = 0; // Resetear contador de errores
             }
+            bufferTimeoutId = null;
+        };
+
+        // Función para manejar errores de geolocalización
+        const handlePositionError = (error) => {
+            console.error('Error obteniendo ubicación:', error);
+            consecutiveErrorCount++;
             
-            isTrackingActive = false;
+            let errorMsg = 'Error al obtener ubicación';
             
-            const statusMessage = document.getElementById('statusMessage');
-            statusMessage.textContent = 'Seguimiento detenido';
-            statusMessage.className = 'location-status location-inactive';
-        }
-        
-        // Función para obtener mensaje de error de geolocalización
-        function getPositionErrorMessage(error) {
+            // Mensajes de error más descriptivos
             switch(error.code) {
                 case error.PERMISSION_DENIED:
-                    return "El usuario denegó la solicitud de geolocalización.";
+                    errorMsg = 'Permisos de ubicación denegados';
+                    break;
                 case error.POSITION_UNAVAILABLE:
-                    return "La información de ubicación no está disponible.";
+                    errorMsg = 'Ubicación no disponible';
+                    break;
                 case error.TIMEOUT:
-                    return "Se agotó el tiempo de espera para obtener la ubicación.";
-                case error.UNKNOWN_ERROR:
-                    return "Ocurrió un error desconocido.";
-                default:
-                    return "Error desconocido de geolocalización.";
+                    errorMsg = 'Tiempo de espera agotado';
+                    break;
             }
-        }
-        
-        // Función para actualizar los marcadores en el mapa
-        function updateMapMarkers(data) {
-            if (data.user_type === 'motorizado') {
-                // Actualizar posición del motorizado (objetivo en vista del cliente)
-                updateTargetPosition({
-                    lat: data.latitude,
-                    lng: data.longitude
-                });
+            
+            document.getElementById('statusMessage').textContent = errorMsg;
+            document.getElementById('statusMessage').classList.remove('location-active');
+            document.getElementById('statusMessage').classList.add('location-inactive');
+            
+            // Si hay muchos errores consecutivos, esperar más tiempo antes de reintentar
+            const retryDelay = Math.min(1000 * consecutiveErrorCount, 10000);
+            setTimeout(setupGeolocation, retryDelay);
+        };
+
+        // Configurar el watch de posición
+        const watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const accuracy = position.coords.accuracy;
                 
-                const statusMessage = document.getElementById('statusMessage');
-                statusMessage.textContent = 'Ubicación del motorizado actualizada';
-                statusMessage.className = 'location-status location-active';
+                // Guardar en buffer con datos de precisión
+                positionBuffer = { lat, lon, accuracy };
                 
-                // Resetear el mensaje después de unos segundos
-                setTimeout(() => {
-                    statusMessage.textContent = 'Esperando actualizaciones del motorizado...';
-                    statusMessage.className = 'location-status location-inactive';
-                }, 3000);
-            } else if (data.user_type === 'cliente' && data.user_id == {{ session.user_id }}) {
-                // Actualizar nuestra propia posición (usuario)
-                updateUserPosition({
-                    lat: data.latitude,
-                    lng: data.longitude
-                });
-            }
-        }
-        
-        // Función para actualizar la posición del usuario
-        function updateUserPosition(position) {
-            userPosition = position;
-            
-            if (!userMarker) {
-                // Personalización del icono del cliente
-                userMarker = L.marker([position.lat, position.lng], {
-                    icon: L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style="background-color: #28a745; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
-                        iconSize: [26, 26],
-                        iconAnchor: [13, 13]
-                    })
-                }).addTo(map);
-            } else {
-                userMarker.setLatLng([position.lat, position.lng]);
-            }
-            
-            if (targetPosition) {
-                updateRoute();
-            }
-            
-            // Centrar el mapa si es la primera actualización
-            if (!map.userPositionInitialized) {
-                map.setView([position.lat, position.lng], 15);
-                map.userPositionInitialized = true;
-            }
-        }
-        
-        // Función para actualizar la posición del objetivo
-        function updateTargetPosition(position) {
-            targetPosition = position;
-            
-            if (!targetMarker) {
-                // Personalización del icono del motorizado
-                targetMarker = L.marker([position.lat, position.lng], {
-                    icon: L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style="background-color: #fd7e14; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;"><span style="color: white; font-size: 14px;">🏍️</span></div>`,
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    })
-                }).addTo(map);
-            } else {
-                targetMarker.setLatLng([position.lat, position.lng]);
-            }
-            
-            if (userPosition) {
-                updateRoute();
-            }
-        }
-        
-        // Inicializar mapa base
-        function initMap(mapCenter = [-12.0464, -77.0428], zoom = 12) { // Lima, Perú por defecto
-            map = L.map('map').setView(mapCenter, zoom);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(map);
-            
-            map.userPositionInitialized = false;
-            
-            // Botón para centrar el mapa en la ubicación actual
-            L.control.zoom({
-                position: 'topright'
-            }).addTo(map);
-            
-            // Botón para centrar el mapa en el usuario
-            L.Control.CenterButton = L.Control.extend({
-                options: {
-                    position: 'topright'
-                },
-                
-                onAdd: function(map) {
-                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-                    const button = L.DomUtil.create('a', '', container);
-                    button.innerHTML = '📍';
-                    button.title = 'Centrar en mi ubicación';
-                    button.href = '#';
-                    button.style.fontSize = '18px';
-                    button.style.textAlign = 'center';
-                    button.style.lineHeight = '30px';
-                    button.style.width = '30px';
-                    button.style.height = '30px';
-                    button.style.display = 'block';
-                    button.style.backgroundColor = 'white';
-                    
-                    L.DomEvent.on(button, 'click', function(e) {
-                        L.DomEvent.stopPropagation(e);
-                        L.DomEvent.preventDefault(e);
-                        if (userPosition) {
-                            map.setView([userPosition.lat, userPosition.lng], 16);
-                        } else {
-                            showNotification('Ubicación no disponible');
-                        }
-                    });
-                    
-                    return container;
+                // Enviar inmediatamente si no hay timeout en curso
+                if (!bufferTimeoutId) {
+                    // Ajustar tiempo de buffer según la velocidad del dispositivo
+                    const bufferTime = isMobile ? 300 : 100;
+                    bufferTimeoutId = setTimeout(sendBufferedPosition, bufferTime);
                 }
-            });
+            },
+            handlePositionError,
+            watchOptions
+        );
+        
+        // Almacenar ID para poder cancelar el watch si es necesario
+        window.mapWatchId = watchId;
+    } else {
+        alert('Geolocalización no soportada por este navegador.');
+        
+        // Actualizar UI para reflejar la falta de soporte
+        document.getElementById('statusMessage').textContent = 'Geolocalización no soportada';
+        document.getElementById('statusMessage').classList.remove('location-active');
+        document.getElementById('statusMessage').classList.add('location-inactive');
+    }
+}
+
+// Función para actualizar el propio marcador con indicador de precisión
+function updateOwnMarker(position, icon, accuracy) {
+    const [lat, lon] = position;
+    
+    if (userRole === 'motorizado') {
+        // Actualizar o crear marcador
+        if (motorizadoMarker) {
+            motorizadoMarker.setLatLng(position);
+        } else {
+            motorizadoMarker = L.marker(position, { icon: icon }).addTo(map);
             
-            new L.Control.CenterButton().addTo(map);
+            // Añadir tooltip para información adicional
+            motorizadoMarker.bindTooltip('Motorizado', {
+                permanent: false,
+                direction: 'top',
+                offset: [0, -10]
+            });
         }
         
-        // Inicializar mapa al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar socket
-            initSocket();
+        // Añadir o actualizar círculo de precisión si tenemos datos
+        if (accuracy && accuracy > 10) {
+            if (motorizadoMarker._accuracyCircle) {
+                motorizadoMarker._accuracyCircle.setLatLng(position).setRadius(accuracy);
+            } else {
+                motorizadoMarker._accuracyCircle = L.circle(position, {
+                    radius: accuracy,
+                    weight: 1,
+                    color: '#333',
+                    fillColor: '#F49A13',
+                    fillOpacity: 0.15
+                }).addTo(map);
+            }
+        }
+        
+        lastMotorizadoPos = position;
+    } else {
+        // Similar para cliente
+        if (clienteMarker) {
+            clienteMarker.setLatLng(position);
+        } else {
+            clienteMarker = L.marker(position, { icon: icon }).addTo(map);
             
-            // Inicializar mapa centrado en una ubicación por defecto (se reposicionará cuando tengamos datos)
-            initMap();
-            
-            // Comenzar el seguimiento de ubicación del cliente
-            startTracking();
-            
-            // Escuchar cambios de estado del pedido
-            socket.on('order_status_update', function(data) {
-                if (data.order_id == currentOrderId) {
-                    document.getElementById('orderStatus').textContent = data.status;
-                    
-                    if (data.status === 'entregado') {
-                        showNotification('¡Pedido entregado! El seguimiento finalizará.');
-                        setTimeout(() => {
-                            stopTracking();
-                            window.location.href = '/detalle/order/' + currentOrderId;
-                        }, 5000);
-                    }
-                }
+            clienteMarker.bindTooltip('Cliente', {
+                permanent: false,
+                direction: 'top',
+                offset: [0, -10]
             });
+        }
+        
+        if (accuracy && accuracy > 10) {
+            if (clienteMarker._accuracyCircle) {
+                clienteMarker._accuracyCircle.setLatLng(position).setRadius(accuracy);
+            } else {
+                clienteMarker._accuracyCircle = L.circle(position, {
+                    radius: accuracy,
+                    weight: 1,
+                    color: '#F49A13',
+                    fillColor: '#F49A13',
+                    fillOpacity: 0.15
+                }).addTo(map);
+            }
+        }
+        
+        lastClientePos = position;
+    }
+    
+    // Centrar mapa en primera actualización
+    if (!isInitialPositionSet) {
+        if ((userRole === 'motorizado' && lastMotorizadoPos) || 
+            (userRole === 'cliente' && lastClientePos)) {
+            map.setView(position, 17);
+            isInitialPositionSet = true;
+            
+            // Habilitar arrastre y zoom en móviles ahora que el mapa está centrado
+            if (isMobile) {
+                map.dragging.enable();
+                map.tap.enable();
+            }
+        }
+    }
+    
+    // Actualizar la ruta si tenemos ambas posiciones
+    if (lastMotorizadoPos && lastClientePos) {
+        throttledUpdateRoute();
+    }
+}
+
+// Función para actualizar la ruta con limitación de frecuencia
+function throttledUpdateRoute() {
+    const now = Date.now();
+    if (now - lastRouteCalcTime > ROUTE_THROTTLE_MS) {
+        updateRoute();
+        lastRouteCalcTime = now;
+    }
+}
+
+// Función para actualizar la ruta optimizada
+function updateRoute() {
+    if (!lastMotorizadoPos || !lastClientePos) return;
+    
+    if (routingControl) {
+        // Actualizar waypoints existentes es más eficiente que recrear
+        routingControl.setWaypoints([
+            L.latLng(lastMotorizadoPos),
+            L.latLng(lastClientePos)
+        ]);
+    } else {
+        // Primera creación de la ruta con opciones optimizadas
+        routingControl = L.Routing.control({
+            waypoints: [
+                L.latLng(lastMotorizadoPos),
+                L.latLng(lastClientePos)
+            ],
+            routeWhileDragging: false,
+            addWaypoints: false,    // No permitir añadir waypoints
+            draggableWaypoints: false, // No permitir arrastrar waypoints
+            lineOptions: { 
+                styles: [{ color: '#F49A13', weight: 4, opacity: 0.7 }],
+                extendToWaypoints: true,
+                missingRouteTolerance: 0
+            },
+            show: false,         // No mostrar la barra de detalles
+            showAlternatives: false, // No mostrar rutas alternativas para mejor rendimiento
+            createMarker: () => null, // Usamos nuestros propios marcadores
+            fitSelectedRoutes: false,  // No hacer zoom automático
+            useZoomParameter: false,   // No forzar zoom al calcular ruta
+        }).addTo(map);
+        
+        // Configurar evento solo una vez
+        routingControl.on('routesfound', (e) => {
+            const route = e.routes[0];
+            
+            // Actualizar distancia y tiempo con formato mejorado
+            const distance = route.summary.totalDistance / 1000;
+            let distanceText = '';
+            
+            if (distance < 1) {
+                // Si es menos de 1km, mostrar en metros
+                distanceText = Math.round(distance * 1000) + ' m';
+            } else {
+                // Si es más de 1km, mostrar con un decimal
+                distanceText = distance.toFixed(1) + ' km';
+            }
+            
+            document.getElementById('distanceValue').textContent = distanceText;
+            
+            // Formatear tiempo de manera más legible
+            const totalMinutes = Math.round(route.summary.totalTime / 60);
+            let timeText = '';
+            
+            if (totalMinutes < 60) {
+                timeText = totalMinutes + ' min';
+            } else {
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                timeText = hours + ' h ' + (minutes > 0 ? minutes + ' min' : '');
+            }
+            
+            document.getElementById('timeValue').textContent = timeText;
+            
+            // Añadir clase fadeIn para efecto visual en los valores actualizados
+            document.getElementById('distanceValue').classList.add('fade-in');
+            document.getElementById('timeValue').classList.add('fade-in');
+            
+            // Eliminar la clase después de la animación
+            setTimeout(() => {
+                document.getElementById('distanceValue').classList.remove('fade-in');
+                document.getElementById('timeValue').classList.remove('fade-in');
+            }, 500);
         });
-    </script>
-</body>
-</html>
+    }
+}
+
+// Escuchar actualizaciones de ubicación desde el servidor
+socket.on('location_updated', (data) => {
+    if (data.order_id === orderId && data.role !== userRole) {
+        // Solo procesar actualizaciones de la otra parte
+        const lat = data.lat;
+        const lon = data.lon;
+        const accuracy = data.accuracy;
+        
+        if (data.role === 'motorizado') {
+            if (motorizadoMarker) {
+                motorizadoMarker.setLatLng([lat, lon]);
+                
+                // Actualizar círculo de precisión si existe
+                if (accuracy && accuracy > 10 && motorizadoMarker._accuracyCircle) {
+                    motorizadoMarker._accuracyCircle.setLatLng([lat, lon]).setRadius(accuracy);
+                }
+            } else {
+                motorizadoMarker = L.marker([lat, lon], { icon: motorizadoIcon }).addTo(map);
+                
+                // Añadir tooltip
+                motorizadoMarker.bindTooltip('Motorizado', {
+                    permanent: false,
+                    direction: 'top',
+                    offset: [0, -10]
+                });
+                
+                // Añadir círculo de precisión si tenemos datos
+                if (accuracy && accuracy > 10) {
+                    motorizadoMarker._accuracyCircle = L.circle([lat, lon], {
+                        radius: accuracy,
+                        weight: 1,
+                        color: '#333',
+                        fillColor: '#F49A13',
+                        fillOpacity: 0.15
+                    }).addTo(map);
+                }
+            }
+            
+            // Aplicar animación sutil de pulso al recibir actualización
+            const markerElement = motorizadoMarker.getElement();
+            if (markerElement) {
+                markerElement.classList.add('pulse-marker');
+                setTimeout(() => {
+                    markerElement.classList.remove('pulse-marker');
+                }, 2000);
+            }
+            
+            lastMotorizadoPos = [lat, lon];
+        } else if (data.role === 'cliente') {
+            if (clienteMarker) {
+                clienteMarker.setLatLng([lat, lon]);
+                
+                // Actualizar círculo de precisión si existe
+                if (accuracy && accuracy > 10 && clienteMarker._accuracyCircle) {
+                    clienteMarker._accuracyCircle.setLatLng([lat, lon]).setRadius(accuracy);
+                }
+            } else {
+                clienteMarker = L.marker([lat, lon], { icon: clienteIcon }).addTo(map);
+                
+                // Añadir tooltip
+                clienteMarker.bindTooltip('Cliente', {
+                    permanent: false,
+                    direction: 'top',
+                    offset: [0, -10]
+                });
+                
+                // Añadir círculo de precisión si tenemos datos
+                if (accuracy && accuracy > 10) {
+                    clienteMarker._accuracyCircle = L.circle([lat, lon], {
+                        radius: accuracy,
+                        weight: 1,
+                        color: '#F49A13',
+                        fillColor: '#F49A13',
+                        fillOpacity: 0.15
+                    }).addTo(map);
+                }
+            }
+            
+            // Aplicar animación sutil de pulso al recibir actualización
+            const markerElement = clienteMarker.getElement();
+            if (markerElement) {
+                markerElement.classList.add('pulse-marker');
+                setTimeout(() => {
+                    markerElement.classList.remove('pulse-marker');
+                }, 2000);
+            }
+            
+            lastClientePos = [lat, lon];
+        }
+        
+        // Actualizar la ruta con limitación de frecuencia
+        if (lastMotorizadoPos && lastClientePos) {
+            throttledUpdateRoute();
+        }
+        
+        // Si es la primera vez que recibimos ambas ubicaciones, centrar en ambos
+        if (lastMotorizadoPos && lastClientePos && !isInitialPositionSet) {
+            centerOnBothMarkers();
+            isInitialPositionSet = true;
+        }
+    }
+});
+
+// Iniciar seguimiento de posición después de cargar completamente el mapa
+map.whenReady(() => {
+    setTimeout(setupGeolocation, 500);
+});
+
+// Botón para centrar el mapa en ambas ubicaciones
+document.getElementById('centerMapButton').addEventListener('click', () => {
+    centerOnBothMarkers();
+});
+
+// Optimización para eventos de zoom/mapa
+map.on('zoomstart', () => {
+    // Reducir detalles durante el zoom para mejor rendimiento
+    if (routingControl) {
+        const routeLayer = document.querySelector('.leaflet-routing-container');
+        if (routeLayer) routeLayer.style.display = 'none';
+    }
+});
+
+map.on('zoomend', () => {
+    // Restaurar detalles después del zoom
+    if (routingControl) {
+        const routeLayer = document.querySelector('.leaflet-routing-container');
+        if (routeLayer) routeLayer.style.display = '';
+    }
+});
+
+// Gestión de eventos de cambio de tamaño de ventana
+window.addEventListener('resize', () => {
+    // Ajustar tamaño del mapa
+    map.invalidateSize();
+    
+    // Re-centrar en los marcadores si ya están disponibles
+    if (lastMotorizadoPos && lastClientePos) {
+        setTimeout(centerOnBothMarkers, 300);
+    }
+});
+
+// Gestión de eventos de conexión/desconexión
+socket.on('connect', () => {
+    console.log('Conectado al servidor');
+    document.getElementById('statusMessage').textContent = 'Conectado al servidor';
+    document.getElementById('statusMessage').classList.remove('location-inactive');
+    document.getElementById('statusMessage').classList.add('location-active');
+    
+    // Al reconectar, solicitar ubicaciones actualizadas
+    socket.emit('get_initial_locations', { order_id: orderId });
+});
+
+socket.on('disconnect', () => {
+    console.log('Desconectado del servidor');
+    document.getElementById('statusMessage').textContent = 'Desconectado del servidor';
+    document.getElementById('statusMessage').classList.remove('location-active');
+    document.getElementById('statusMessage').classList.add('location-inactive');
+});
+
+// Optimizaciones adicionales para dispositivos de bajo rendimiento
+if (isMobile) {
+    // Reducir animaciones en dispositivos móviles
+    map.options.zoomAnimation = false;
+    map.options.fadeAnimation = false;
+    
+    // Limitar el frame rate en dispositivos móviles
+    L.Util.requestAnimFrame = function(callback, context, immediate) {
+        if (immediate && window.requestAnimationFrame) {
+            return window.requestAnimationFrame(callback.bind(context));
+        } else {
+            return window.setTimeout(callback.bind(context), 1000 / 20); // 20fps
+        }
+    };
+}
+
+// Optimización para eventos de orientación en móviles
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        map.invalidateSize();
+        if (lastMotorizadoPos && lastClientePos) {
+            centerOnBothMarkers();
+        }
+    }, 300);
+});
+
+// Cargar ubicaciones iniciales desde el servidor
+socket.emit('get_initial_locations', { order_id: orderId });
+
+// Mostrar modal informativo al cargar la página
+document.getElementById('infoModal').classList.remove('hidden');
+document.getElementById('closeInfoModal').addEventListener('click', () => {
+    document.getElementById('infoModal').classList.add('hidden');
+});
+document.getElementById('confirmInfoModal').addEventListener('click', () => {
+    document.getElementById('infoModal').classList.add('hidden');
+    
+    // Animar el botón de centrado para indicar al usuario que puede usarlo
+    const centerBtn = document.getElementById('centerMapButton');
+    centerBtn.classList.add('pulse-marker');
+    setTimeout(() => { 
+        centerBtn.classList.remove('pulse-marker');
+    }, 3000);
+});
+
+// Gestión de visibilidad de la página
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        // Al volver a la página, solicitar actualizaciones
+        socket.emit('get_initial_locations', { order_id: orderId });
+        
+        // Reiniciar geolocalización si fuera necesario
+        if ((userRole === 'motorizado' && !lastMotorizadoPos) || 
+            (userRole === 'cliente' && !lastClientePos)) {
+            setupGeolocation();
+        }
+    }
+});
+</script>
+<script src="{{ url_for('static', filename='js/background-tracking.js') }}"></script>
+{% endblock %}

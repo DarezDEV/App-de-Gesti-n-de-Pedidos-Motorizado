@@ -1,197 +1,570 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard Administrador{% endblock %}
 
 {% block style %}
 <style>
-   .stat-card {
-       border-radius: 8px;
-       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-       padding: 1.5rem;
-       transition: transform 0.3s ease;
-   }
-   .stat-card:hover {
-       transform: translateY(-5px);
-   }
-   .chart-container {
-       position: relative;
-       margin: auto;
-       height: 300px;
-       width: 100%;
-   }
+    :root {
+        --primary-color: #F49A13;
+        --primary-hover: #D88000;
+        --primary-light: rgba(244, 154, 19, 0.1);
+        --primary-medium: rgba(244, 154, 19, 0.3);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+    }
+    
+    .fade-in-delay-1 {
+        animation-delay: 0.2s;
+        opacity: 0;
+    }
+    
+    .fade-in-delay-2 {
+        animation-delay: 0.4s;
+        opacity: 0;
+    }
+    
+    .fade-in-delay-3 {
+        animation-delay: 0.6s;
+        opacity: 0;
+    }
+    
+    .fade-in-delay-4 {
+        animation-delay: 0.8s;
+        opacity: 0;
+    }
+    
+    .motorcycle-icon {
+        display: inline-block;
+        margin-right: 6px;
+        animation: ride 2s infinite linear;
+    }
+    
+    @keyframes ride {
+        0% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        100% { transform: translateX(-5px); }
+    }
+    
+    /* Toast notification */
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #fff;
+        color: #333;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    
+    .toast-icon {
+        color: var(--primary-color);
+    }
+
+    /* Fixing responsive buttons */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    @media (min-width: 640px) {
+        .action-buttons {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+    }
+
+    .action-button {
+        width: 100%;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    @media (min-width: 768px) {
+        .action-button {
+            width: auto;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-
-<main class="p-4 sm:ml-64">
-   <div class="p-4">
-       <h1 class="text-2xl font-bold text-gray-800 mb-6">Dashboard de Estadísticas</h1>
-       
-       <!-- Tarjetas de estadísticas -->
-       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-           <div class="stat-card bg-white">
-               <h2 class="text-lg font-semibold text-gray-700">Ventas Totales</h2>
-               <p class="text-3xl font-bold text-blue-600">{{ stats.total_sales }}</p>
-               <p class="text-gray-500">Pedidos entregados</p>
-           </div>
-           
-           <div class="stat-card bg-white">
-               <h2 class="text-lg font-semibold text-gray-700">Ingresos Totales</h2>
-               <p class="text-3xl font-bold text-green-600">${{ "%.2f"|format(stats.total_revenue) }}</p>
-               <p class="text-gray-500">De pedidos entregados</p>
-           </div>
-           
-           <div class="stat-card bg-white">
-               <h2 class="text-lg font-semibold text-gray-700">Pedidos Pendientes</h2>
-               <p class="text-3xl font-bold text-yellow-600">{{ stats.pending_orders }}</p>
-               <p class="text-gray-500">Por procesar</p>
-           </div>
-           
-           <div class="stat-card bg-white">
-               <h2 class="text-lg font-semibold text-gray-700">Usuarios Activos</h2>
-               <p class="text-3xl font-bold text-purple-600">{{ stats.active_users }}</p>
-               <p class="text-gray-500">Clientes registrados</p>
-           </div>
-       </div>
-       
-       <!-- Gráficos -->
-       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-           <!-- Ventas mensuales -->
-           <div class="bg-white p-6 rounded-lg shadow">
-               <h2 class="text-lg font-semibold text-gray-700 mb-4">Ventas Mensuales</h2>
-               <div class="chart-container">
-                   <canvas id="monthlySalesChart"></canvas>
-               </div>
-           </div>
-           
-           <!-- Ventas por categoría -->
-           <div class="bg-white p-6 rounded-lg shadow">
-               <h2 class="text-lg font-semibold text-gray-700 mb-4">Ventas por Categoría</h2>
-               <div class="chart-container">
-                   <canvas id="categorySalesChart"></canvas>
-               </div>
-           </div>
-       </div>
-       
-       <!-- Top productos -->
-       <div class="bg-white p-6 rounded-lg shadow mb-8">
-           <h2 class="text-lg font-semibold text-gray-700 mb-4">Top 5 Productos Más Vendidos</h2>
-           <div class="overflow-x-auto">
-               <table class="min-w-full bg-white">
-                   <thead>
-                       <tr>
-                           <th class="py-2 px-4 border-b text-left">Producto</th>
-                           <th class="py-2 px-4 border-b text-left">Unidades Vendidas</th>
-                       </tr>
-                   </thead>
-                   <tbody>
-                       {% for product in stats.top_products %}
-                       <tr>
-                           <td class="py-2 px-4 border-b">{{ product.name }}</td>
-                           <td class="py-2 px-4 border-b">{{ product.total_sold }}</td>
-                       </tr>
-                       {% endfor %}
-                   </tbody>
-               </table>
-           </div>
-       </div>
-       
-       <!-- Rendimiento por categoría -->
-       <div class="bg-white p-6 rounded-lg shadow">
-           <h2 class="text-lg font-semibold text-gray-700 mb-4">Rendimiento por Categoría</h2>
-           <div class="overflow-x-auto">
-               <table class="min-w-full bg-white">
-                   <thead>
-                       <tr>
-                           <th class="py-2 px-4 border-b text-left">Categoría</th>
-                           <th class="py-2 px-4 border-b text-left">Pedidos</th>
-                           <th class="py-2 px-4 border-b text-left">Ingresos</th>
-                       </tr>
-                   </thead>
-                   <tbody>
-                       {% for category in stats.category_sales %}
-                       <tr>
-                           <td class="py-2 px-4 border-b">{{ category.name }}</td>
-                           <td class="py-2 px-4 border-b">{{ category.order_count }}</td>
-                           <td class="py-2 px-4 border-b">${{ "%.2f"|format(category.total_revenue) }}</td>
-                       </tr>
-                       {% endfor %}
-                   </tbody>
-               </table>
-           </div>
-       </div>
-   </div>
-</main>
-
+<div class="sm:ml-64 pt-20">
+    <div class="p-6">
+        <!-- Dashboard Header -->
+        <div class="bg-white rounded-xl shadow-sm py-3 px-4 md:py-4 md:px-6 mb-6 w-full">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+                <div>
+                    <h1 class="m-0 text-xl md:text-2xl text-gray-900 flex items-center">
+                        <span class="motorcycle-icon inline-block mr-2">
+                            <i class="fas fa-motorcycle text-[#F49A13]"></i>
+                        </span>
+                        Dashboard MotoRush
+                    </h1>
+                    <p class="text-xs md:text-sm text-gray-500">
+                        <i class="far fa-calendar-alt mr-1"></i>
+                        <span id="current-date">{% if current_date %}{{ current_date }}{% else %}Hoy{% endif %}</span>
+                    </p>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="refresh-data" class="action-button bg-primary-light text-primary border-none py-1.5 px-3 md:py-2 md:px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-all duration-200 hover:bg-primary-medium">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Actualizar datos</span>
+                    </button>
+                    
+                    <a href="{{ url_for('generate_motorizado_report') }}" class="action-button bg-primary-light text-primary border-none py-1.5 px-3 md:py-2 md:px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-all duration-200 hover:bg-primary-medium">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Reporte Motorizados</span>
+                    </a>
+                    
+                    <a href="{{ url_for('generate_top_products_report') }}" class="action-button bg-primary-light text-primary border-none py-1.5 px-3 md:py-2 md:px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-all duration-200 hover:bg-primary-medium">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Reporte Productos</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Metrics Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Ventas Totales -->
+            <div class="bg-white p-6 shadow rounded-xl border-l-4 border-primary overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg fade-in fade-in-delay-1">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-[54px] h-[54px] rounded-xl bg-primary-light flex items-center justify-center">
+                        <i class="fas fa-shopping-cart text-xl text-[#F49A13]"></i>
+                    </div>
+                    <div class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        <span>+{{ stats.growth_percentage|default('12') }}%</span>
+                    </div>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500">Ventas Totales</h3>
+                <p id="total-sales" class="text-2xl font-bold text-gray-900 mt-1">{{ stats.total_sales }}</p>
+                <div class="mt-4 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <i class="fas fa-calendar-week mr-1"></i>
+                        <span>Últimos 30 días</span>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Ingresos Totales -->
+            <div class="bg-white p-6 shadow rounded-xl border-l-4 border-primary overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg fade-in fade-in-delay-2">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-[54px] h-[54px] rounded-xl bg-primary-light flex items-center justify-center">
+                        <i class="fas fa-dollar-sign text-xl text-[#F49A13]"></i>
+                    </div>
+                    <div class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        <span>+{{ stats.revenue_growth|default('15') }}%</span>
+                    </div>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500">Ingresos Totales</h3>
+                <p id="total-revenue" class="text-2xl font-bold text-gray-900 mt-1">${{ "{:,.2f}".format(stats.total_revenue) }}</p>
+                <div class="mt-4 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <i class="fas fa-calendar-week mr-1"></i>
+                        <span>Último mes</span>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Pedidos Pendientes -->
+            <div class="bg-white p-6 shadow rounded-xl border-l-4 border-primary overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg fade-in fade-in-delay-3">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-[54px] h-[54px] rounded-xl bg-primary-light flex items-center justify-center">
+                        <i class="fas fa-clock text-xl text-[#F49A13]"></i>
+                    </div>
+                    <div class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center">
+                        <i class="fas fa-motorcycle mr-1"></i>
+                        <span>{{ stats.pending_orders }} por entregar</span>
+                    </div>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500">Pedidos Pendientes</h3>
+                <p id="pending-orders" class="text-2xl font-bold text-gray-900 mt-1">{{ stats.pending_orders }}</p>
+                <div class="mt-4 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <i class="fas fa-clock mr-1"></i>
+                        <span>Tiempo promedio: {{ stats.avg_delivery_time|default('35 min') }}</span>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Usuarios Activos -->
+            <div class="bg-white p-6 shadow rounded-xl border-l-4 border-primary overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg fade-in fade-in-delay-4">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-[54px] h-[54px] rounded-xl bg-primary-light flex items-center justify-center">
+                        <i class="fas fa-users text-xl text-[#F49A13]"></i>
+                    </div>
+                    <div class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        <span>+{{ stats.user_growth|default('8') }}%</span>
+                    </div>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500">Usuarios Activos</h3>
+                <p id="active-users" class="text-2xl font-bold text-gray-900 mt-1">{{ stats.active_users }}</p>
+                <div class="mt-4 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <i class="fas fa-user-plus mr-1"></i>
+                        <span>{{ stats.new_users|default('15') }} nuevos esta semana</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Ventas Semanales -->
+            <div class="bg-white p-6 shadow rounded-xl overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg fade-in fade-in-delay-1">
+                <div class="bg-gradient-to-r from-primary to-[#ffb44d] text-white rounded-t-xl p-4 -mx-6 -mt-6 mb-5">
+                    <h2 class="text-lg font-semibold">Ventas Semanales</h2>
+                </div>
+                <div class="mt-6">
+                    <div class="min-h-[300px] relative rounded-xl overflow-hidden">
+                        <div id="weekly-sales-chart"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Productos Más Vendidos -->
+            <div class="bg-white p-6 shadow rounded-xl overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg fade-in fade-in-delay-2">
+                <div class="bg-gradient-to-r from-primary to-[#ffb44d] text-white rounded-t-xl p-4 -mx-6 -mt-6 mb-5">
+                    <h2 class="text-lg font-semibold">Productos Más Vendidos</h2>
+                </div>
+                <div class="mt-6">
+                    <div class="min-h-[300px] relative rounded-xl overflow-hidden">
+                        <div id="top-products-chart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Distribución de Estados de Pedidos -->
+            <div class="bg-white p-6 shadow rounded-xl overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg fade-in fade-in-delay-3">
+                <div class="bg-gradient-to-r from-primary to-[#ffb44d] text-white rounded-t-xl p-4 -mx-6 -mt-6 mb-5">
+                    <h2 class="text-lg font-semibold">Estados de Pedidos</h2>
+                </div>
+                <div class="mt-6">
+                    <div class="min-h-[300px] relative rounded-xl overflow-hidden">
+                        <canvas id="order-status-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rendimiento de Motorizados -->
+            <div class="bg-white p-6 shadow rounded-xl overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg fade-in fade-in-delay-3 col-span-1 lg:col-span-2">
+                <div class="bg-gradient-to-r from-primary to-[#ffb44d] text-white rounded-t-xl p-4 -mx-6 -mt-6 mb-5">
+                    <h2 class="text-lg font-semibold">Desempeño de Motorizados</h2>
+                </div>
+                <div class="mt-6">
+                    <div class="min-h-[300px] relative rounded-xl overflow-hidden">
+                        <canvas id="delivery-performance-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="toast">
+        <div class="toast-icon">
+            <i class="fas fa-check-circle text-xl"></i>
+        </div>
+        <div>
+            <p class="text-sm font-medium">Datos actualizados correctamente</p>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
-    // Datos para gráficos
-    const monthlySalesData = {
-      labels: [{% for month in stats.monthly_sales %}'{{ month.month }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-      datasets: [{
-          label: 'Ingresos mensuales',
-          data: [{% for month in stats.monthly_sales %}{{ month.revenue }}{% if not loop.last %}, {% endif %}{% endfor %}],
-          backgroundColor: 'rgba(54, 162, 235, 0.2)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true
-      }]
-  };
-  
-  const categorySalesData = {
-      labels: [{% for category in stats.category_sales %}'{{ category.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-      datasets: [{
-          label: 'Ingresos por categoría',
-          data: [{% for category in stats.category_sales %}{{ category.total_revenue }}{% if not loop.last %}, {% endif %}{% endfor %}],
-          backgroundColor: [
-              'rgba(255, 99, 132, 0.6)',
-              'rgba(54, 162, 235, 0.6)',
-              'rgba(255, 206, 86, 0.6)',
-              'rgba(75, 192, 192, 0.6)',
-              'rgba(153, 102, 255, 0.6)',
-              'rgba(255, 159, 64, 0.6)'
-          ],
-          borderWidth: 1
-      }]
-  };
-  
-  // Inicializar gráficos cuando el DOM esté listo
-  document.addEventListener('DOMContentLoaded', function() {
-      // Gráfico de ventas mensuales
-      const monthlySalesCtx = document.getElementById('monthlySalesChart').getContext('2d');
-      new Chart(monthlySalesCtx, {
-          type: 'line',
-          data: monthlySalesData,
-          options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                  y: {
-                      beginAtZero: true
-                  }
-              }
-          }
-      });
-      
-      // Gráfico de ventas por categoría
-      const categorySalesCtx = document.getElementById('categorySalesChart').getContext('2d');
-      new Chart(categorySalesCtx, {
-          type: 'pie',
-          data: categorySalesData,
-          options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                  legend: {
-                      position: 'bottom'
-                  }
-              }
-          }
-      });
-  });
+// Set current date
+document.addEventListener('DOMContentLoaded', function() {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const today = new Date();
+    document.getElementById('current-date').textContent = today.toLocaleDateString('es-ES', options);
+    
+    // Refresh button functionality
+    document.getElementById('refresh-data').addEventListener('click', function() {
+        this.classList.add('animate-pulse');
+        const button = this;
+        
+        fetch('/api/admin/dashboard-data')
+            .then(response => response.json())
+            .then(data => {
+                updateCharts(data);
+                updateMetrics(data);
+                button.classList.remove('animate-pulse');
+                showToast();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.classList.remove('animate-pulse');
+            });
+    });
+    
+    // Prevent right-click on charts
+    document.querySelectorAll('.chart-container').forEach(function(element) {
+        element.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
+});
+
+// Function to update charts with new data
+function updateCharts(data) {
+    weeklySalesChart.updateSeries([{ data: data.weekly_sales.map(item => item.weekly_revenue) }]);
+    topProductsChart.updateSeries([{ data: data.top_products.map(item => item.total_sold) }]);
+}
+
+// Function to update metrics with new data
+function updateMetrics(data) {
+    document.getElementById('total-sales').textContent = data.total_sales;
+    document.getElementById('total-revenue').textContent = '$' + data.total_revenue.toFixed(2);
+    document.getElementById('pending-orders').textContent = data.pending_orders;
+    document.getElementById('active-users').textContent = data.active_users;
+}
+
+function showToast() {
+    const toast = document.getElementById('toast-notification');
+    toast.classList.add('show');
+    setTimeout(function() {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Weekly Sales Chart (ApexCharts Spline Area)
+const weeklySalesData = {{ stats.weekly_sales | tojson }};
+var weeklySalesOptions = {
+    series: [{
+        name: 'Ingresos Semanales',
+        data: weeklySalesData.map(item => item.weekly_revenue)
+    }],
+    chart: {
+        height: 350,
+        type: 'area',
+        toolbar: { show: false }
+    },
+    dataLabels: {
+        enabled: false
+    },
+    stroke: {
+        curve: 'smooth'
+    },
+    xaxis: {
+        type: 'category',
+        categories: weeklySalesData.map(item => `Semana ${item.week_number} - ${item.year}`)
+    },
+    tooltip: {
+        x: {
+            format: 'Semana WW YYYY'
+        },
+        y: {
+            formatter: function(val) {
+                return '$' + val.toFixed(2);
+            }
+        }
+    },
+    fill: {
+        type: 'gradient',
+        gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.7,
+            opacityTo: 0.3,
+            stops: [0, 90, 100]
+        }
+    }
+};
+var weeklySalesChart = new ApexCharts(document.querySelector("#weekly-sales-chart"), weeklySalesOptions);
+weeklySalesChart.render();
+
+// Top Products Chart (ApexCharts Spline Area)
+const topProductsData = {{ stats.top_products | tojson }};
+var topProductsOptions = {
+    series: [{
+        name: 'Unidades Vendidas',
+        data: topProductsData.map(item => item.total_sold)
+    }],
+    chart: {
+        height: 350,
+        type: 'area',
+        toolbar: { show: false }
+    },
+    dataLabels: {
+        enabled: false
+    },
+    stroke: {
+        curve: 'smooth'
+    },
+    xaxis: {
+        type: 'category',
+        categories: topProductsData.map(item => item.name)
+    },
+    tooltip: {
+        y: {
+            formatter: function(val) {
+                return val + ' unidades';
+            }
+        }
+    },
+    fill: {
+        type: 'gradient',
+        gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.7,
+            opacityTo: 0.3,
+            stops: [0, 90, 100]
+        }
+    }
+};
+var topProductsChart = new ApexCharts(document.querySelector("#top-products-chart"), topProductsOptions);
+topProductsChart.render();
+
+// Order Status Distribution (Pie Chart)
+const orderStatusData = {
+    labels: ['Pendiente', 'En Camino', 'Entregado'],
+    datasets: [{
+        data: [{{ stats.pending_orders }}, {{ stats.in_progress_orders }}, {{ stats.total_sales }}],
+        backgroundColor: ['#F49A13', '#FFB44D', '#28a745'],
+        borderColor: '#fff',
+        borderWidth: 2
+    }]
+};
+const orderStatusCtx = document.getElementById('order-status-chart').getContext('2d');
+new Chart(orderStatusCtx, {
+    type: 'doughnut',
+    data: orderStatusData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: '#666',
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    padding: 20
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                titleColor: '#333',
+                bodyColor: '#333',
+                borderColor: '#F49A13',
+                borderWidth: 1,
+                cornerRadius: 8,
+                displayColors: true,
+                boxWidth: 10,
+                boxHeight: 10,
+                usePointStyle: true
+            }
+        }
+    }
+});
+
+// Delivery Performance Chart (Updated to show average ratings)
+const deliveryPerformanceCtx = document.getElementById('delivery-performance-chart').getContext('2d');
+const deliveryPerformanceData = {{ stats.delivery_performance | tojson }};
+
+new Chart(deliveryPerformanceCtx, {
+    type: 'bar',
+    data: {
+        labels: deliveryPerformanceData.map(item => item.motorizado_name),
+        datasets: [
+            {
+                label: 'Pedidos Entregados',
+                data: deliveryPerformanceData.map(item => item.total_deliveries),
+                backgroundColor: '#F49A13',
+                borderColor: '#F49A13',
+                borderWidth: 1,
+                borderRadius: 4,
+                barPercentage: 0.6
+            },
+            {
+                label: 'Promedio de Valoraciones',
+                data: deliveryPerformanceData.map(item => parseFloat(item.avg_rating).toFixed(1)),
+                backgroundColor: '#FFB44D',
+                borderColor: '#FFB44D',
+                borderWidth: 1,
+                borderRadius: 4,
+                barPercentage: 0.6
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                titleColor: '#333',
+                bodyColor: '#333',
+                borderColor: '#F49A13',
+                borderWidth: 1,
+                cornerRadius: 8,
+                displayColors: true,
+                boxWidth: 10,
+                boxHeight: 10,
+                usePointStyle: true,
+                callbacks: {
+                    label: function(context) {
+                        if (context.dataset.label === 'Promedio de Valoraciones') {
+                            return `${context.dataset.label}: ${context.raw} ⭐`;
+                        }
+                        return `${context.dataset.label}: ${context.raw}`;
+                    }
+                }
+            }
+        }
+    }
+});
 </script>
 {% endblock %}

@@ -1,4 +1,3 @@
-// app/static/js/admin_orders.js
 tailwind.config = {
   theme: {
     extend: {
@@ -77,9 +76,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (Notification.permission === 'granted') {
       const notification = new Notification('Nuevo Pedido Recibido', {
         body: `Pedido #${order.order_id} de ${order.client_name} por RD$${order.total_amount.toFixed(2)}`,
-        icon: '/static/uploads/favicon.ico',
+        icon: '/static/img/logo.png',
         tag: `order-${order.order_id}`,
-        data: { url: `/admin/order/${order.order_id}` }
+        data: { url: `/dashboard/admin/ordenes/orden/${order.order_id}` }
       });
 
       notification.onclick = function() {
@@ -232,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 <div class="mt-3 sm:mt-4 flex justify-end">
-                    <a href="/admin/order/${order.order_id}" class="text-primary hover:text-primary-700 text-xs sm:text-sm font-medium flex items-center">
+                    <a href="/dashboard/admin/ordenes/orden/${order.order_id}" class="text-primary hover:text-primary-700 text-xs sm:text-sm font-medium flex items-center">
                         Ver detalles
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4 ml-1">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />

@@ -75,20 +75,6 @@ class UserService:
             conn.close()
 
     @staticmethod
-    def delete_user(user_id):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        try:
-            cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            raise Exception(f'Error al eliminar el usuario: {str(e)}')
-        finally:
-            cursor.close()
-            conn.close()
-
-    @staticmethod
     def email_exists(gmail):
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)

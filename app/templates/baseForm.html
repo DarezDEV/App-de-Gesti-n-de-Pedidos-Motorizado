@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/> 
     <link rel="icon" href="{{ url_for('static', filename='img/logo.png')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styleAlert.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css')}}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    
 </head>
 <body>
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -47,7 +47,7 @@
         <div class="w-16 h-16 border-4 border-[#F49A13] border-t-transparent rounded-full animate-spin"></div>
         <!-- Motorcycle icon in the center -->
         <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <i class="fas fa-motorcycle text-[#F49A13] text-xl"></i>
+            <i class="fas fa-motorcycle text-[#F49A13] text-xl"></i>
         </div>
       </div>
       <p class="mt-4 text-gray-700 font-medium">Procesando...</p>
@@ -58,7 +58,7 @@
         <div class="container mx-auto px-6 py-3">
             <div class="flex flex-col md:flex-row items-center justify-between">
                 <a href="#" class="flex cursor-pointer items-center justify-center">
-                    <img src="../static/img/logo.png" alt="logo" class="h-10 w-10">
+                    <img src="{{ url_for('static', filename='img/logo.png')}}" alt="logo" class="h-10 w-10">
                     <span class="text-xl font-bold logo_title p-2">MotoRush</span>
                 </a>
                 <div class="mt-3 md:mt-0 flex items-center">

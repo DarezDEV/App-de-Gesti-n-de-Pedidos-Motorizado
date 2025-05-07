@@ -1,4 +1,4 @@
-# recommendation_ai_service.py Error al cargar modelos
+# recommendation_ai_service.py
 from flask import jsonify, request
 import pandas as pd
 import numpy as np
@@ -156,17 +156,8 @@ class RecommendationAIService:
         
         return similarity_scores
     
-    def get_recommendations_for_user(self, user_id, limit=4):
-        """
-        Obtiene recomendaciones de productos para un usuario usando un enfoque híbrido
+    def get_recommendations_for_user(self, user_id, limit=12):
         
-        Args:
-            user_id (int): ID del usuario
-            limit (int): Número máximo de recomendaciones a devolver
-        
-        Returns:
-            list: Lista de productos recomendados
-        """
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         

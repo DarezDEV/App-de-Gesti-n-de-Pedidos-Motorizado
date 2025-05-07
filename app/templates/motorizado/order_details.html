@@ -1,26 +1,32 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalles del Pedido #{{ order['order_id'] }}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    :root {
-      --color-primary: #F49A13;
-    }
-    .bg-primary { background-color: var(--color-primary); }
-    .text-primary { color: var(--color-primary); }
-    .hover\:bg-primary-dark:hover { background-color: #e08a03; }
-  </style>
-</head>
-<body class="bg-gray-100 min-h-screen">
-  <div class="container mx-auto px-4 py-8">
+{% extends 'base.html' %}
+
+{% block title %}Detalles del Pedido{% endblock %}
+
+{% block content %}
+<main class="flex flex-col py-6">
+  <nav class="flex justify-start w-full px-4 sm:px-12 mb-4" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+            <a href="{{ url_for('motorizado_pedidos') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-amber-500">
+                Pedidos
+            </a>
+        </li>
+        <li aria-current="page">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Detalles del Pedido #{{ order['order_id'] }}</span>
+            </div>
+        </li>
+    </ol>
+  </nav>
+  <div class="container mx-auto px-4 sm:px-6 py-2">
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
       <!-- Header -->
-      <div class="bg-primary p-4 flex justify-between items-center">
+      <div class="bg-[#F49A13] p-4 flex justify-between items-center">
         <h1 class="text-white text-xl font-bold">Pedido #{{ order['order_id'] }}</h1>
-        <span class="bg-white text-primary px-3 py-1 rounded-full font-semibold">{{ order['status']|capitalize }}</span>
+        <span class="bg-white text-[#F49A13] px-3 py-1 rounded-full font-semibold">{{ order['status']|capitalize }}</span>
       </div>
 
       <!-- Contenido principal -->
@@ -92,25 +98,141 @@
           {% endif %}
         </div>
 
-        {% if order['status'] == 'en camino' %}
-        <!-- Botón Marcar como Entregado -->
-        <button onclick="marcarEntregado({{ order.order_id }})" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-600 transition">
-            Marcar como Entregado
-        </button>
-        
-        <a href="{{ url_for('motorizado_mapa', order_id=order['order_id']) }}" class="btn btn-primary">
-          <i class="fas fa-route"></i> Ver en mapa
-        </a>
-        {% endif %}
+        <!-- Acciones - Botones organizados elegantemente -->
+        <div class="mt-8 border-t pt-5">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex gap-3 order-2 sm:order-1">
+              <a href="{{ url_for('motorizado_pedidos') }}" class="py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Volver a Mis Pedidos
+              </a>
+            </div>
 
-        <!-- Acción para volver -->
-        <div class="mt-8 flex justify-end">
-          <a href="{{ url_for('motorizado_pedidos') }}" class="py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Volver a Mis Pedidos</a>
+            {% if order['status'] == 'en camino' %}
+            <div class="flex gap-3 order-1 sm:order-2 w-full sm:w-auto">
+              <a href="{{ url_for('motorizado_map', order_id=order['order_id']) }}" class="py-2 px-4 border border-[#F49A13] rounded-lg text-[#F49A13] hover:bg-amber-50 transition flex items-center justify-center flex-1 sm:flex-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                Ver en mapa
+              </a>
+              <button onclick="marcarEntregado({{ order.order_id }})" class="bg-[#F49A13] text-white py-2 px-4 rounded-lg hover:bg-amber-600 transition flex items-center justify-center flex-1 sm:flex-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Marcar como Entregado
+              </button>
+            </div>
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
   </div>
-</body>
-</html>
+</main>
+{% endblock %}
+{% block scripts %}
+<script>
+  function showNotification(title, message, type) {
+    const notification = document.createElement('div');
+    notification.setAttribute('role', 'alert');
+    notification.id = 'flash';
 
+    if (type === 'error') {
+      notification.className = 'flash-message slide-in';
+      notification.innerHTML = `
+        <svg class="flash-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+        </svg>
+        <div class="message-container">
+          <span class="message">Advertencia:</span> ${message}
+        </div>
+        <button onclick="closeFlash()" class="flash-close">×</button>
+      `;
+    } else if (type === 'success') {
+      notification.className = 'flash-message-success slide-in';
+      notification.innerHTML = `
+        <svg class="flash-icon-success" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z"/>
+        </svg>
+        <div class="message-container-success">
+          <span class="message-success">Éxito:</span> ${message}
+        </div>
+        <button onclick="closeFlash()" class="flash-close-success">×</button>
+      `;
+    } else {
+      notification.className = 'flash-message slide-in';
+      notification.innerHTML = `
+        <div class="message-container">
+          <span class="message"><strong>${title}:</strong></span> ${message}
+        </div>
+        <button onclick="closeFlash()" class="flash-close">×</button>
+      `;
+    }
+    const notificationsContainer = document.getElementById('notifications') || document.body;
+    notificationsContainer.appendChild(notification);
 
+    setTimeout(() => {
+      notification.classList.add('slide-out');
+      notification.addEventListener('transitionend', () => {
+        notification.remove();
+      });
+    }, 3000);
+  }
+
+  function closeFlash() {
+    const notification = document.getElementById('flash');
+    if (notification) {
+      notification.classList.add('slide-out');
+      notification.addEventListener('transitionend', () => {
+        notification.remove();
+      });
+    }
+  }
+
+  function marcarEntregado(orderId) {
+    fetch(`/marcar_entregado/${orderId}`, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => {
+        // Verificar si la respuesta es válida
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          // Actualizar el estado en la página
+          const statusElement = document.querySelector('.bg-white.text-\\[\\#F49A13\\]');
+          if (statusElement) {
+            statusElement.textContent = 'Entregado';
+          }
+
+          // Ocultar botones de acción
+          const actionButtons = document.querySelector('.order-1.sm\\:order-2');
+          if (actionButtons) {
+            actionButtons.style.display = 'none';
+          }
+
+          // Mostrar notificación de éxito
+          showNotification('Éxito', 'Pedido marcado como entregado correctamente.', 'success');
+        } else {
+          // Mostrar notificación de error
+          showNotification('Error', data.message || 'No se pudo marcar como entregado.', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        // Mostrar notificación de error en lugar de alert
+        showNotification('Error', 'Error de conexión al servidor. Por favor, intenta de nuevo.', 'error');
+      });
+  }
+</script>
+{% endblock %}

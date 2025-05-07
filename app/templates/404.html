@@ -32,7 +32,7 @@
                     {% elif session['user_role'] == 'cliente' %}
                         {{ url_for('cliente_dashboard') }}
                     {% elif session['user_role'] == 'motorizado' %}
-                        {{ url_for('motorizado_dashboard') }}
+                        {{ url_for('motorizado_pedidos') }}
                     {% else %}
                         {{ url_for('login') }}
                     {% endif %}"

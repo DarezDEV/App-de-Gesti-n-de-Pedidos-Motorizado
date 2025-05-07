@@ -11,6 +11,7 @@
     .text-primary { color: var(--color-primary); }
     .border-primary { border-color: var(--color-primary); }
     .hover\:bg-primary-dark:hover { background-color: #e08a03; }
+    .hover\:bg-primary-light:hover { background-color: #fdf1e0; }
     
     /* Custom styles for table on small screens */
     @media (max-width: 640px) {
@@ -25,125 +26,243 @@
         display: flex;
         justify-content: space-between;
         padding: 0.75rem;
+        font-size: 0.9rem; /* Tamaño de fuente más pequeño para móviles */
       }
       .responsive-table td::before {
         content: attr(data-label);
         font-weight: 600;
         color: #6b7280;
       }
+      /* Ajustar el tamaño de la imagen en la tabla */
+      .responsive-table .w-10 {
+        width: 2rem;
+        height: 2rem;
+      }
+    }
+
+    /* Ajustar breadcrumbs en pantallas pequeñas */
+    @media (max-width: 640px) {
+      .breadcrumb-text {
+        font-size: 0.85rem; /* Reducir tamaño de texto */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px; /* Limitar ancho */
+      }
+    }
+
+    /* Ajustar botones para pantallas pequeñas */
+    @media (max-width: 640px) {
+      .action-button {
+        width: 100%; /* Botones ocupan todo el ancho */
+        padding: 0.75rem; /* Mayor padding para mejor interacción táctil */
+        font-size: 0.9rem;
+      }
     }
   </style>
 {% endblock %}
 
 {% block content %}
-<main class="flex flex-col sm:ml-64 p-6">
-  <div class="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
+<main class="flex flex-col py-4 sm:ml-64"> <!-- Reducir padding en móviles -->
+  <nav class="flex justify-start w-full px-3 sm:px-6 mb-2" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3 overflow-hidden">
+        <li class="inline-flex items-center">
+            <a href="{{ url_for('admin_orders') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-amber-500 breadcrumb-text">
+                Pedidos
+            </a>
+        </li>
+        <li aria-current="page">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 breadcrumb-text">Detalles del Pedido #{{ order['order_id'] }}</span>
+            </div>
+        </li>
+    </ol>
+  </nav>
+  <div class="container mx-auto px-3 sm:px-6 lg:px-8"> <!-- Reducir padding en móviles -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
       <!-- Header -->
-      <div class="bg-primary p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <h1 class="text-white text-lg sm:text-xl md:text-2xl font-bold">Detalles del Pedido #{{ order.order_id }}</h1>
-        <span class="bg-white text-primary px-3 py-1 rounded-full font-semibold text-sm">{{ order.status|capitalize }}</span>
+      <div class="bg-primary p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h1 class="text-white text-base sm:text-xl md:text-2xl font-bold">Detalles del Pedido #{{ order.order_id }}</h1>
+        <span class="status-badge bg-white text-primary px-3 py-1 rounded-full font-semibold text-xs sm:text-sm">{{ order.status|capitalize }}</span>
       </div>
 
       <!-- Main Content -->
-      <div class="p-4 sm:p-6 lg:p-8">
+      <div class="p-3 sm:p-6 lg:p-8"> <!-- Reducir padding en móviles -->
         <!-- Customer Info -->
         <div class="mb-6">
-          <h2 class="text-base sm:text-lg font-semibold mb-3 border-b pb-2">Información del Cliente</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <h2 class="text-sm sm:text-lg font-semibold mb-3 border-b pb-2">Información del Cliente</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
             <div>
-              <p class="text-gray-600 text-sm">Nombre:</p>
-              <p class="font-medium">{{ order.client_name }} {{ order.client_last_name }}</p>
+              <p class="text-gray-600 text-xs sm:text-sm">Nombre:</p>
+              <p class="font-medium text-sm sm:text-base">{{ order.client_name }} {{ order.client_last_name }}</p>
             </div>
             <div>
-              <p class="text-gray-600 text-sm">Dirección de Entrega:</p>
-              <p class="font-medium break-words">{{ order.address }}</p>
+              <p class="text-gray-600 text-xs sm:text-sm">Dirección de Entrega:</p>
+              <p class="font-medium text-sm sm:text-base break-words">{{ order.address }}</p>
             </div>
             <div>
-              <p class="text-gray-600 text-sm">Email:</p>
-              <p class="font-medium break-words">{{ order.client_email }}</p>
+              <p class="text-gray-600 text-xs sm:text-sm">Email:</p>
+              <p class="font-medium text-sm sm:text-base break-words">{{ order.client_email }}</p>
             </div>
             <div>
-              <p class="text-gray-600 text-sm">Fecha del pedido:</p>
-              <p class="font-medium">{{ order.created_at }}</p>
+              <p class="text-gray-600 text-xs sm:text-sm">Fecha del pedido:</p>
+              <p class="font-medium text-sm sm:text-base">{{ order.created_at }}</p>
             </div>
           </div>
         </div>
 
         <!-- Order Items -->
         <div class="mb-6">
-          <h2 class="text-base sm:text-lg font-semibold mb-3 border-b pb-2">Productos del Pedido</h2>
+          <h2 class="text-sm sm:text-lg font-semibold mb-3 border-b pb-2">Productos del Pedido</h2>
           <div class="overflow-x-auto">
             <table class="min-w-full responsive-table">
               <thead class="bg-gray-50 hidden sm:table-header-group">
                 <tr>
-                  <th class="px-4 py-2 text-left text-gray-600">Producto</th>
-                  <th class="px-4 py-2 text-center text-gray-600">Cantidad</th>
-                  <th class="px-4 py-2 text-right text-gray-600">Precio Unit.</th>
-                  <th class="px-4 py-2 text-right text-gray-600">Subtotal</th>
+                  <th class="px-3 sm:px-4 py-2 text-left text-gray-600 text-xs sm:text-sm">Producto</th>
+                  <th class="px-3 sm:px-4 py-2 text-center text-gray-600 text-xs sm:text-sm">Cantidad</th>
+                  <th class="px-3 sm:px-4 py-2 text-right text-gray-600 text-xs sm:text-sm">Precio Unit.</th>
+                  <th class="px-3 sm:px-4 py-2 text-right text-gray-600 text-xs sm:text-sm">Subtotal</th>
                 </tr>
               </thead>
               <tbody>
                 {% for item in order['items'] %}
                 <tr class="border-b sm:border-b">
-                  <td class="px-4 py-3" data-label="Producto">
+                  <td class="px-3 sm:px-4 py-3" data-label="Producto">
                     <div class="flex items-center">
                       <div class="w-10 h-10 bg-gray-200 rounded mr-3 flex-shrink-0">
                         <img src="{{ url_for('static', filename='uploads/' ~ item.image) }}" alt="{{ item.name }}" class="w-full h-full object-cover rounded">
                       </div>
-                      <span class="text-sm sm:text-base">{{ item.name }}</span>
+                      <span class="text-xs sm:text-base">{{ item.name }}</span>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-center" data-label="Cantidad">{{ item.quantity }}</td>
-                  <td class="px-4 py-3 text-right" data-label="Precio Unit.">RD${{ "%.2f"|format(item.price) }}</td>
-                  <td class="px-4 py-3 text-right font-medium" data-label="Subtotal">RD${{ "%.2f"|format(item.price * item.quantity) }}</td>
+                  <td class="px-3 sm:px-4 py-3 text-center text-xs sm:text-base" data-label="Cantidad">{{ item.quantity }}</td>
+                  <td class="px-3 sm:px-4 py-3 text-right text-xs sm:text-base" data-label="Precio Unit.">RD${{ "%.2f"|format(item.price) }}</td>
+                  <td class="px-3 sm:px-4 py-3 text-right font-medium text-xs sm:text-base" data-label="Subtotal">RD${{ "%.2f"|format(item.price * item.quantity) }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="3" class="px-4 py-3 text-right font-semibold">Total:</td>
-                  <td class="px-4 py-3 text-right font-semibold">RD${{ "%.2f"|format(order.total_amount) }}</td>
+                  <td colspan="3" class="px-3 sm:px-4 py-3 text-right font-semibold text-sm sm:text-base">Total:</td>
+                  <td class="px-3 sm:px-4 py-3 text-right font-semibold text-sm sm:text-base">RD${{ "%.2f"|format(order.total_amount) }}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
         </div>
 
-        <!-- Assign Delivery (if pending) -->
-        {% if order.status == 'pendiente' %}
-        <div class="mb-6">
-          <h2 class="text-base sm:text-lg font-semibold mb-3 border-b pb-2">Asignar Repartidor</h2>
-          {% if motorizados %}
-            <form action="{{ url_for('assign_motorizado', order_id=order.order_id) }}" method="post" class="flex flex-col sm:flex-row gap-4">
-              <select name="motorizado_id" class="w-full sm:w-64 p-2 border rounded text-sm">
-                <option value="">Seleccionar repartidor</option>
-                {% for motorizado in motorizados %}
-                <option value="{{ motorizado.id }}">{{ motorizado.name }} {{ motorizado.last_name }}</option>
-                {% endfor %}
-              </select>
-              <button type="submit" class="bg-primary text-white py-2 px-6 rounded-lg text-sm font-medium hover:bg-primary-dark">Asignar y Despachar</button>
-            </form>
-          {% else %}
-            <p class="text-red-500 font-medium text-sm">No hay motorizados disponibles</p>
-          {% endif %}
-        </div>
-        {% endif %}
-
         <!-- Assigned Delivery (if exists) -->
         {% if order.motorizado_name %}
         <div class="mb-6">
-          <h2 class="text-base sm:text-lg font-semibold mb-3 border-b pb-2">Repartidor Asignado</h2>
-          <p class="font-medium">{{ order.motorizado_name }} {{ order.motorizado_last_name }}</p>
+          <h2 class="text-sm sm:text-lg font-semibold mb-3 border-b pb-2">Repartidor Asignado</h2>
+          <div class="flex items-center">
+            <div class="bg-primary bg-opacity-10 p-2 rounded-full mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 sm:h-5 w-4 sm:w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z" />
+              </svg>
+            </div>
+            <p class="font-medium text-sm sm:text-base motorizado-info">{{ order.motorizado_name }} {{ order.motorizado_last_name }}</p>
+          </div>
         </div>
         {% endif %}
 
-        <!-- Back Button -->
-        <div class="mt-6 flex justify-center sm:justify-end">
-          <a href="{{ url_for('admin_orders') }}" class="w-full sm:w-auto py-2 px-6 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 text-center">Volver a Pedidos</a>
+        <!-- Action Section with Elegantly Organized Buttons -->
+        <div class="mt-6 sm:mt-8 border-t pt-4 sm:pt-5">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <!-- Assign Delivery (if pending) -->
+            {% if order.status == 'pendiente' %}
+            <div class="w-full">
+              <h2 class="text-sm sm:text-base font-semibold mb-3">Asignar Repartidor</h2>
+              {% if motorizados %}
+                <form action="{{ url_for('assign_motorizado', order_id=order.order_id) }}" method="post" class="flex flex-col sm:flex-row gap-3 w-full">
+                  <select name="motorizado_id" class="w-full sm:flex-grow p-2 border rounded text-xs sm:text-sm" required>
+                    <option value="">Seleccionar repartidor</option>
+                    {% for motorizado in motorizados %}
+                    <option value="{{ motorizado.id }}">{{ motorizado.name }} {{ motorizado.last_name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="action-button bg-primary text-white py-2 px-4 sm:px-6 rounded-lg text-xs sm:text-sm font-medium hover:bg-primary-dark transition w-full sm:w-auto flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 sm:h-5 w-4 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Asignar y Despachar
+                  </button>
+                </form>
+              {% else %}
+                <div class="flex items-center text-red-500 bg-red-50 p-3 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 sm:h-5 w-4 sm:w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                  <p class="font-medium text-xs sm:text-sm">No hay motorizados disponibles</p>
+                </div>
+              {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Back Button -->
+            <div class="flex justify-center {% if order.status == 'pendiente' %}mt-4 sm:mt-0{% else %}w-full justify-end{% endif %}">
+              <a href="{{ url_for('admin_orders') }}" class="action-button flex items-center py-2 px-4 sm:px-6 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 hover:bg-gray-50 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 sm:h-5 w-4 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Volver a Pedidos
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Definir ORDER_ID desde el servidor
+  const ORDER_ID = {{ order.order_id }};
+
+  // Conectar al namespace /admin de Socket.IO
+  const socket = io('/admin');
+
+  // Escuchar el evento order_status_update
+  socket.on('order_status_update', function(data) {
+    // Verificar si el evento corresponde al pedido actual
+    if (data.order_id === ORDER_ID) {
+      // Actualizar el texto del badge de estado
+      const statusBadge = document.querySelector('.status-badge');
+      if (statusBadge) {
+        statusBadge.textContent = 'En camino'; // Mostrar "En camino" con mayúscula inicial
+      }
+
+      // Actualizar la información del motorizado si está disponible
+      const motorizadoInfo = document.querySelector('.motorizado-info');
+      if (data.motorizado_name && !motorizadoInfo) {
+        const deliverySection = document.createElement('div');
+        deliverySection.className = 'mb-6';
+        deliverySection.innerHTML = `
+          <h2 class="text-sm sm:text-lg font-semibold mb-3 border-b pb-2">Repartidor Asignado</h2>
+          <div class="flex items-center">
+            <div class="bg-primary bg-opacity-10 p-2 rounded-full mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 sm:h-5 w-4 sm:w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z" />
+              </svg>
+            </div>
+            <p class="font-medium text-sm sm:text-base motorizado-info">${data.motorizado_name} ${data.motorizado_last_name || ''}</p>
+          </div>
+        `;
+        const mainContent = document.querySelector('.p-3.sm\\:p-6.lg\\:p-8');
+        mainContent.insertBefore(deliverySection, mainContent.children[2]);
+      }
+
+      // Ocultar el formulario de asignación si existe
+      const assignForm = document.querySelector('form[action*="/assign_motorizado"]');
+      if (assignForm) {
+        assignForm.parentElement.style.display = 'none';
+      }
+    }
+  });
+</script>
 {% endblock %}

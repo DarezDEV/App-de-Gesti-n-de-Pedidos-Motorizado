@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,294 +8,862 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="{{ url_for('static', filename='img/logo.png')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cliente.css')}}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styleAlert.css')}}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-minimal@5/minimal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">  
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/> 
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     {% block style%} {% endblock %}
     <title>MotoRush | {% block title %}{% endblock %}</title>
     <style>
-        .brand-bg {
-            background-color: #F49A13;
+        /* Estilos existentes */
+        .bg-wave {
+            background-color: #f3f4f6;
+            background-image: url("data:image/svg+xml,%3Csvg width='100%' height='50px' viewBox='0 0 1280 140' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23F49A13'%3E%3Cpath d='M1280 0l-266 91.52a72.59 72.59 0 0 1-30.76 3.71L0 0v140h1280z' fill-opacity='0.15'/%3E%3Cpath d='M1280 0l-262.1 116.26a73.29 73.29 0 0 1-39.09 6L0 0v140h1280z' fill-opacity='0.12'/%3E%3Cpath d='M1280 0l-255.5 125.02a70.54 70.54 0 0 1-42.96 1.4L0 0v140h1280z' fill-opacity='0.1'/%3E%3C/g%3E%3C/svg%3E");
+            background-size: 100% 100%;
+        }
+
+        .edit-form {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out;
+            opacity: 0;
+        }
+
+        .edit-form.active {
+            max-height: 800px;
+            opacity: 1;
+        }
+
+        .input_from {
+            position: relative;
+            display: block;
+            overflow: hidden;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: transparent;
+            padding-top: 0.75rem;
+        }
+
+        .input_from:focus-within {
+            border-bottom: 1px solid #F49A13;
+        }
+
+        #profileModalOverlay {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #profileModalOverlay.opacity-100 {
+            opacity: 1;
+        }
+
+        .modal-animate-in {
+            animation: modalFadeIn 0.3s ease forwards;
+        }
+
+        .modal-animate-out {
+            animation: modalFadeOut 0.3s ease forwards;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes modalFadeOut {
+            from {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+        }
+
+        #verification-section {
+            display: none;
+        }
+
+        /* Categoria popover estilos */
+        .category-card {
+            transition: all 0.2s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .category-card .rounded-full {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .category-card:hover .rounded-full {
+            transform: scale(1.05);
+        }
+
+        .category-card h4 {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100px;
+            margin: 0 auto;
+        }
+
+        .group:hover .absolute {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .bg-\[\#FF6A00\] {
+            font-size: 0.65rem;
+            letter-spacing: 0.5px;
+        }
+
+        .group-hover\:opacity-100 {
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) translateX(-33%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) translateX(-33%);
+            }
+        }
+
+        .triangle-arrow {
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid white;
+            position: absolute;
+            top: -10px;
+            left: 36%;
+            z-index: 60;
+            filter: drop-shadow(0 -1px 1px rgba(0, 0, 0, 0.1));
+        }
+
+        .group-hover\:opacity-100 {
+            animation: fadeInWithTriangle 0.25s ease-out;
+        }
+
+        @keyframes fadeInWithTriangle {
+            0% {
+                opacity: 0;
+                transform: translateY(-5px) translateX(-33%);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0) translateX(-33%);
+            }
+        }
+
+        .group .absolute:before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: calc(33% + 1px);
+            width: 0;
+            height: 0;
+            border-left: 11px solid transparent;
+            border-right: 11px solid transparent;
+            border-bottom: 11px solid rgba(229, 231, 235, 0.5);
+            z-index: 59;
+            transform: translateX(-1px);
+        }
+
+        /* Estilos menu hamburguesa */
+        .hamburger {
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            transition: all 0.25s;
+            position: relative;
+        }
+
+        .hamburger-top,
+        .hamburger-middle,
+        .hamburger-bottom {
+            position: absolute;
+            width: 24px;
+            height: 2px;
+            top: 0;
+            left: 0;
+            background: #4B5563;
+            transform: rotate(0);
+            transition: all 0.5s;
+        }
+
+        .hamburger-middle {
+            transform: translateY(7px);
+        }
+
+        .hamburger-bottom {
+            transform: translateY(14px);
+        }
+
+        .open .hamburger-top {
+            transform: rotate(45deg) translateY(6px) translateX(6px);
+            background: #F49A13;
+        }
+
+        .open .hamburger-middle {
+            display: none;
+        }
+
+        .open .hamburger-bottom {
+            transform: rotate(-45deg) translateY(6px) translateX(-6px);
+            background: #F49A13;
+        }
+
+        /* Mobile menu */
+        .mobile-menu {
+            position: fixed;
+            top: 64px;
+            right: -100%;
+            width: 100%;
+            max-width: 320px;
+            height: calc(100vh - 64px);
+            background-color: white;
+            transition: right 0.3s ease-in-out;
+            z-index: 40;
+            overflow-y: auto;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-menu.active {
+            right: 0;
+        }
+
+        /* Media queries */
+        @media (max-width: 1024px) {
+            .group .absolute {
+                width: 700px;
+            }
+
+            .triangle-arrow {
+                left: 25%;
+            }
+
+            .grid-cols-5 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .group .absolute {
+                width: 90vw;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .triangle-arrow {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .grid-cols-5 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid-cols-5 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .category-card .rounded-full {
+                width: 16vw;
+                height: 16vw;
+            }
+        }
+
+        /* Navbar responsivo */
+        nav {
+            z-index: 50;
+            width: 100%;
         }
     </style>
 </head>
-<body class="font-poppins">
 
+<body class="font-poppins pt-16">
     <div id="notifications" class="fixed top-0 right-0 p-4 space-y-4 z-50"></div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        {% for category, message in messages %}
-            {% if category == 'error' %}
-                <div id="flash" class="flash-message slide-in" role="alert">
-                    <svg class="flash-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
-                    </svg>
-                    <div class="message-container">
-                        <span class="message">Advertencia:</span> {{ message }}
-                    </div>
-                    <button onclick="closeFlash()" class="flash-close">&times;</button>
-                </div>
-            {% elif category == 'success' %}
-                <div id="flash" class="flash-message-success slide-in" role="alert">
-                    <svg class="flash-icon-success" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z"/>
-                    </svg>
-                    <div class="message-container-success">
-                        <span class="message-success">Éxito:</span> {{ message }}
-                    </div>
-                    <button onclick="closeFlash()" class="flash-close-success">&times;</button>
-                </div>
-            {% endif %}
-        {% endfor %}
+    {% for category, message in messages %}
+    {% if category == 'error' %}
+    <div id="flash" class="flash-message slide-in" role="alert">
+        <svg class="flash-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+            viewBox="0 0 20 20">
+            <path
+                d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+        </svg>
+        <div class="message-container">
+            <span class="message">Advertencia:</span> {{ message }}
+        </div>
+        <button onclick="closeFlash()" class="flash-close">×</button>
+    </div>
+    {% elif category == 'success' %}
+    <div id="flash" class="flash-message-success slide-in" role="alert">
+        <svg class="flash-icon-success" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+            viewBox="0 0 20 20">
+            <path
+                d="M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z" />
+        </svg>
+        <div class="message-container-success">
+            <span class="message-success">Éxito:</span> {{ message }}
+        </div>
+        <button onclick="closeFlash()" class="flash-close-success">×</button>
+    </div>
     {% endif %}
-{% endwith %}
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
 
-    <div id="loading-spinner" class="fixed inset-0 z-[900] flex items-center justify-center bg-black bg-opacity-50 hidden">
-        <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center z-[1000]">
-          <div class="relative">
-            <!-- Outer rotating circle -->
-            <div class="w-16 h-16 border-4 border-[#F49A13] border-t-transparent rounded-full animate-spin"></div>
-            <!-- Motorcycle icon in the center -->
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <i class="fas fa-motorcycle text-[#F49A13] text-xl"></i>
+    <div id="loading-spinner"
+        class="fixed inset-0 z-[3000] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center z-[2000]">
+            <div class="relative">
+                <div class="w-16 h-16 border-4 border-[#F49A13] border-t-transparent rounded-full animate-spin"></div>
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <i class="fas fa-motorcycle text-[#F49A13] text-xl"></i>
+                </div>
             </div>
-          </div>
-          <p class="mt-4 text-gray-700 font-medium">Procesando...</p>
+            <p class="mt-4 text-gray-700 font-medium">Procesando...</p>
         </div>
     </div>
 
-    <nav class="bg-white shadow-md sticky top-0 z-50 fixed">
+    <nav class="bg-white shadow-md fixed top-0 w-full z-30">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
-                <div class="flex items-center">
+                <div class="flex items-center gap-2">
                     <div class="flex-shrink-0 flex items-center">
                         <a href="{{ url_for('cliente_dashboard') }}" class="flex items-center space-x-2">
-                            <img src="{{ url_for('static', filename='img/logo.png')}}" alt="logo" class="h-10 w-10 object-cover">
+                            <img src="{{ url_for('static', filename='img/logo.png')}}" alt="logo"
+                                class="h-10 w-10 object-cover">
                             <span class="text-xl font-bold text-[#F49A13] bg-clip-text">MotoRush</span>
                         </a>
                     </div>
-                    
-                    {% if request.path != "/carrito" %}
-                    <div class="hidden md:ml-6 md:flex md:space-x-8">
-                        <a href="{{ url_for('cliente_dashboard') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#F49A13]">
+
+                    {% if request.path != "/dashboard/cliente/carrito" %}
+                    <!-- Menú de PC: Solo visible en pantallas grandes (lg y mayores) -->
+                    <div class="hidden lg:flex lg:space-x-8 lg:ml-6">
+                        <a href="{{ url_for('cliente_dashboard') }}"
+                            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#F49A13]">
                             Inicio
                         </a>
-                        <a href="#" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#F49A13]">
-                            Categorias
-                        </a>
-                        <a href="{{ url_for('client_orders') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#F49A13]">
+                        <div class="relative group">
+                            <a href="#"
+                                class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#F49A13]">
+                                Categorias <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                            </a>
+
+                            <div
+                                class="absolute left-0 z-50 mt-3 w-[900px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform -translate-x-1/3">
+                                <div class="triangle-arrow"></div>
+                                <div class="py-2 bg-white rounded-lg shadow-lg border border-gray-100">
+                                    <div class="p-4 grid grid-cols-5 gap-4">
+                                        {% if categories %}
+                                        {% for category in categories %}
+                                        <a href="{{ url_for('client_category_products', category_id=category.id) }}"
+                                            class="category-card flex flex-col items-center transition-all duration-200 hover:opacity-80">
+                                            <div
+                                                class="w-24 h-24 mb-2 overflow-hidden rounded-full border border-gray-100">
+                                                <img src="{{ url_for('static', filename='uploads/' + category.image) }}"
+                                                    alt="{{ category.name }}" class="w-full h-full object-cover">
+                                            </div>
+                                            <h4 class="text-sm text-center text-gray-800">{{ category.name }}</h4>
+                                            {% if category.hot %}
+                                            <span
+                                                class="bg-[#FF6A00] text-white text-xs px-2 py-0.5 rounded-sm mt-1">HOT</span>
+                                            {% endif %}
+                                        </a>
+                                        {% endfor %}
+                                        {% else %}
+                                        <div class="col-span-5 p-4 text-center text-gray-500">
+                                            No hay categorías disponibles
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('client_orders') }}"
+                            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#F49A13]">
                             Mis pedidos
                         </a>
                     </div>
                     {% endif %}
                 </div>
 
-                <div class="flex items-center">
-                    {% if request.path != "/carrito" %}
-                    <div class="relative hidden sm:block">
-                        <input type="text" placeholder="Buscar productos..." class="pr-10 pl-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-transparent">
+                <div class="flex items-center gap-2">
+                    {% if request.path != "/dashboard/cliente/carrito" %}
+                    <div class="relative hidden lg:flex lg:space-x-8 lg:ml-6">
+                        <input type="text" placeholder="Buscar productos..."
+                            class="pr-10 pl-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-transparent">
                         <button class="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <i class="fas fa-search text-gray-400"></i>
                         </button>
                     </div>
                     <div class="cart-container ml-2">
-                        <a href="{{ url_for('cart_client')}}" id="cartIcon" class="flex items-center w-8 h-8 p-2 rounded-full hover:bg-gray-100 relative">
+                        <a href="{{ url_for('cart_client')}}" id="cartIcon"
+                            class="flex items-center w-8 h-8 p-2 rounded-full hover:bg-gray-100 relative">
                             <i class="fas fa-shopping-cart text-gray-600"></i>
-                            <span id="cart-counter" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 brand-bg rounded-full">
-                                {{ cart_count if cart_count is defined else 0 }}
+                            <span id="cart-counter"
+                                  class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-[#F49A13] rounded-full">
+                                  0
                             </span>
                         </a>
                     </div>
                     {% endif %}
-                    <a href="{{ url_for('logout')}}" class="flex items-center w-8 h-8 p-2 rounded-full hover:bg-gray-100 ml-2">
-                        <i class="fa-solid fa-arrow-right-from-bracket text-gray-600"></i>
-                    </a>
-                    
-                    <!-- Mobile menu button -->
-                    <button id="mobile-menu-button" class="ml-2 md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-[#F49A13] hover:bg-gray-100 focus:outline-none">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Mobile menu, toggle classes based on menu state -->
-            <div id="mobile-menu" class="md:hidden hidden">
-                <div class="px-2 pt-2 pb-3 space-y-1">
-                    {% if request.path != "/carrito" %}
-                    <div class="relative mb-3">
-                        <input type="text" placeholder="Buscar productos..." class="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-transparent">
-                        <button class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </button>
+
+                    <div class="flex items-center md:ml-4">
+                        <div class=" hidden lg:flex lg:items-center lg:ms-3">
+                            <div>
+                                <button type="button" id="profile-button"
+                                    class="flex text-sm rounded-full ring-2 ring-[#F49A13]" aria-expanded="false"
+                                    data-dropdown-toggle="dropdown-user">
+                                    <span class="sr-only">Open user menu</span>
+                                    <img class="w-10 h-10 rounded-full object-contain object-cover"
+                                        src="{{ url_for('static', filename='Uploads/' + session['user_photo']) }}"
+                                        alt="Foto de perfil">
+                                </button>
+                            </div>
+                            <div class="z-50 hidden my-4 text-base list-none divide-y divide-gray-100 rounded-sm shadow-sm bg-white divide-gray-600"
+                                id="dropdown-user">
+                                <div class="px-4 py-3" role="none">
+                                    <p class="text-sm text-gray-900" role="none">
+                                        {{ session['user_name'] }} {{ session['user_last_name'] }}
+                                    </p>
+                                    <p class="text-sm font-medium truncate text-gray-900 text-gray-300" role="none">
+                                        {{ session['user_gmail'] }}
+                                    </p>
+                                </div>
+                                <ul class="py-1" role="none">
+                                    <li>
+                                        <a href="#" id="open-profile-modal"
+                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
+                                            role="menuitem">Mi Perfil</a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ url_for('logout') }}"
+                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-gray-300"
+                                            role="menuitem">Sign out</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
-                        Todos
-                    </a>
-                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
-                        Categorias
-                    </a>
-                    <a href="{{ url_for('client_orders') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
-                        Mis pedidos
-                    </a>
-                    {% endif %}
+
+                    <!-- Botón de hamburguesa: Visible en pantallas menores a lg (1024px) -->
+                    <button id="menu-btn" class="block lg:hidden hamburger focus:outline-none ml-2 p-2">
+                        <span class="hamburger-top"></span>
+                        <span class="hamburger-middle"></span>
+                        <span class="hamburger-bottom"></span>
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
+    <!-- Sidebar móvil: Visible en pantallas menores a lg (1024px) -->
+    <div id="mobile-menu" class="mobile-menu lg:hidden">
+        <div class="px-4 pt-6 pb-4 space-y-4">
+            {% if request.path != "/dashboard/cliente/carrito" %}
+            <div class="relative mb-5">
+                <input type="text" placeholder="Buscar productos..."
+                    class="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F49A13] focus:border-transparent">
+                <button class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <i class="fas fa-search text-gray-400"></i>
+                </button>
+            </div>
+            <a href="{{ url_for('cliente_dashboard') }}"
+                class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
+                <i class="fas fa-home mr-2"></i> Inicio
+            </a>
 
-        {% block content %}
-        {% endblock %}
+            <div class="relative mobile-dropdown">
+                <button id="categories-dropdown-btn"
+                    class="flex justify-between w-full px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
+                    <span><i class="fas fa-list-ul mr-2"></i> Categorias</span>
+                    <i class="fas fa-chevron-down transition-transform duration-300"></i>
+                </button>
 
-    
-    <script>
-        // Mobile menu toggle
-        document.addEventListener('DOMContentLoaded', function() {
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            
-            if (mobileMenuButton && mobileMenu) {
-                mobileMenuButton.addEventListener('click', function() {
-                    mobileMenu.classList.toggle('hidden');
-                });
-            }
-            
-            // Flash message auto-close
-            const flash = document.getElementById('flash');
-            if (flash) {
-                setTimeout(() => {
-                    flash.style.animation = 'slideOut 0.5s forwards';
-                    setTimeout(() => {
-                        flash.remove();
-                    }, 500);
-                }, 5000);
-            }
-            
-            // Setup cart functionality
-            document.querySelectorAll('.add-to-cart-form').forEach(form => {
-                form.addEventListener('submit', function(event) {
-                    event.preventDefault();
-                    
-                    // Show loading spinner
-                    document.getElementById('loading-spinner').classList.remove('hidden');
-                    
-                    const productId = this.querySelector('input[name="product_id"]').value;
-    
-                    fetch("{{ url_for('add_to_cart') }}", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ product_id: productId, quantity: 1 }),
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Respuesta del servidor:", data);
-                        updateCartCounter(data.cart_count);
-                        
-                        // Hide loading spinner
-                        document.getElementById('loading-spinner').classList.add('hidden');
-                        
-                        // Show success notification
-                        showNotification('Éxito', 'Producto agregado al carrito', 'success');
-                    })
-                    .catch(error => {
-                        console.error("Error:", error);
-                        
-                        // Hide loading spinner
-                        document.getElementById('loading-spinner').classList.add('hidden');
-                        
-                        // Show error notification
-                        showNotification('Error', 'No se pudo agregar al carrito', 'error');
-                    });
-                });
-            });
-        });
-        
-        // Update cart counter
-        function updateCartCounter(count) {
-            const counter = document.getElementById('cart-counter');
-            if (counter) {
-                counter.textContent = count;
-                
-                // Animate counter
-                counter.classList.add('scale-125');
-                setTimeout(() => {
-                    counter.classList.remove('scale-125');
-                }, 300);
-                
-                console.log("Contador actualizado a:", count);
-            }
-        }
-        
-        // Close flash messages
-        function closeFlash() {
-            const flash = document.getElementById('flash');
-            if (flash) {
-                flash.style.animation = 'slideOut 0.5s forwards';
-                setTimeout(() => {
-                    flash.remove();
-                }, 500);
-            }
-        }
-        
-        // Show notification
-        function showNotification(title, message, type) {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = type === 'error' 
-                ? 'fixed top-4 right-4 z-50 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md'
-                : 'fixed top-4 right-4 z-50 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md';
-            
-            notification.innerHTML = `
-                <div class="flex items-center">
-                    <div class="py-1"><svg class="${type === 'error' ? 'text-red-500' : 'text-green-500'}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        ${type === 'error' 
-                            ? '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>'
-                            : '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>'}
-                    </svg></div>
-                    <div class="ml-3">
-                        <p class="font-bold">${title}</p>
-                        <p>${message}</p>
-                    </div>
-                    <button class="ml-4" onclick="this.parentElement.parentElement.remove()">
-                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
+                <div id="categories-dropdown" class="hidden mt-2 mx-2 px-3 py-2 space-y-2 bg-gray-50 rounded-md">
+                    {% if categories %}
+                    {% for category in categories %}
+                    <a href="{{ url_for('client_category_products', category_id=category.id) }}"
+                        class="block pl-3 py-2 text-sm text-gray-600 hover:text-[#F49A13] border-l-2 border-gray-200 hover:border-[#F49A13]">
+                        {{ category.name }}
+                        {% if category.hot %}
+                        <span class="bg-[#FF6A00] text-white text-xs px-2 py-0.5 rounded-sm ml-2">HOT</span>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                    {% else %}
+                    <p class="pl-3 py-2 text-sm text-gray-500">No hay categorías disponibles</p>
+                    {% endif %}
                 </div>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 5 seconds
-            setTimeout(() => {
-                notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 5000);
-        }
+            </div>
 
-        // Request notification permission
-        function requestNotificationPermission() {
-            if (Notification.permission === 'default') {
-                Notification.requestPermission().then(permission => {
-                    console.log(permission === 'granted' ? 'Notificaciones permitidas' : 'Notificaciones denegadas');
-                });
-            }
-        }
-        requestNotificationPermission();
-    </script>
-    
+            <a href="{{ url_for('client_orders') }}"
+                class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
+                <i class="fas fa-box mr-2"></i> Mis pedidos
+            </a>
+
+            <a href="{{ url_for('cart_client')}}"
+                class="flex items-center px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
+                <i class="fas fa-shopping-cart mr-2"></i> Mi carrito
+                <span
+                    class="cart-counter ml-auto inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-[#F49A13] rounded-full">
+                    0
+                </span>
+            </a>
+            {% endif %}
+
+            <div class="border-t border-gray-200 pt-4 mt-4">
+                <div class="flex items-center px-3 py-2">
+                    <img class="w-10 h-10 rounded-full mr-3 object-cover"
+                        src="{{ url_for('static', filename='Uploads/' + session['user_photo']) }}" alt="Foto de perfil">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">{{ session['user_name'] }} {{
+                            session['user_last_name'] }}</p>
+                        <p class="text-xs text-gray-500">{{ session['user_gmail'] }}</p>
+                    </div>
+                </div>
+                <a href="#" id="mobile-profile-btn"
+                    class="block px-3 py-3 mt-2 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
+                    <i class="fas fa-user mr-2"></i> Mi Perfil
+                </a>
+                <a href="{{ url_for('logout') }}" 
+                    class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-[#F49A13] hover:bg-gray-50">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resto del código (modal de perfil, etc.) permanece sin cambios -->
+    <div id="profileModal" class="fixed inset-0 z-[1000] hidden overflow-y-auto">
+        <div class="flex min-h-screen items-center justify-center px-4">
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" id="profileModalOverlay"></div>
+            <div class="relative max-w-2xl w-full bg-white rounded-xl shadow-lg overflow-hidden transform transition-all">
+                <button id="closeProfileModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="h-40 bg-wave"></div>
+                    <div class="flex flex-col items-center px-4 relative">
+                        <div class="flex justify-center mb-4">
+                            <label for="profile-image"
+                                class="relative w-32 h-32 rounded-full border-4 border-[#F49A13] cursor-pointer hover:border-[#FFB44D] transition-all group -mt-16">
+                                <input type="file" id="profile-image" name="profile_image" accept="image/*"
+                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                <img id="profile-pic"
+                                    src="{{ url_for('static', filename='Uploads/' + session['user_photo']) }}"
+                                    alt="Profile Picture" class="w-full h-full object-cover rounded-full" />
+                                <div
+                                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 text-white rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="mb-4 text-center">
+                            <h1 id="profile-name" class="text-2xl font-bold text-gray-800">{{ session['user_name'] }} {{ session['user_last_name'] }}</h1>
+                            <p id="profile-email" class="text-gray-500 mt-1">{{ session['user_gmail'] }}</p>
+                            <div class="mt-6 flex space-x-3 justify-center">
+                                <button id="edit-profile-btn" class="px-4 py-2 bg-[#F49A13] text-white rounded-lg hover:bg-[#D88000] transition-all shadow-md">
+                                    Editar Perfil
+                                </button>
+                                <a href="{{ url_for('change_password') }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-opacity-90 transition-all shadow-md">
+                                    Cambiar Contraseña
+                                </a>
+                            </div>
+                        </div>
+                        <div id="edit-form" class="edit-form w-full mb-6">
+                            <form id="edit-profile-form" class="w-full max-w-lg mx-auto mt-6">
+                                <div class="flex flex-col gap-6 border-t border-gray-200 pt-4">
+                                    <h2 class="text-lg font-semibold text-gray-700 mb-4">Editar Información Personal</h2>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <label class="input_from relative">
+                                            <input type="text" autocomplete="off"
+                                                   name="name"
+                                                   value="{{ session['user_name'] }}"
+                                                   placeholder="" 
+                                                   class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                                                   />
+                                            <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                                                Nombre
+                                            </span>
+                                        </label>
+                                        <label class="input_from relative">
+                                            <input type="text" autocomplete="off"
+                                                   name="last_name"
+                                                   value="{{ session['user_last_name'] }}"
+                                                   placeholder="" 
+                                                   class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                                                   />
+                                            <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                                                Apellido
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <label class="input_from relative">
+                                        <input type="email"
+                                               autocomplete="off"
+                                               name="gmail"
+                                               value="{{ session['user_gmail'] }}"
+                                               placeholder="" 
+                                               class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                                               />
+                                        <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                                            Gmail
+                                        </span>
+                                    </label>
+                                    <div id="verification-section" class="flex flex-col gap-4">
+                                        <label class="input_from relative">
+                                            <input type="text"
+                                                   autocomplete="off"
+                                                   name="verification_code"
+                                                   placeholder=""
+                                                   class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                                                   />
+                                            <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                                                Código de Verificación
+                                            </span>
+                                        </label>
+                                        <button type="button" id="resend-code-btn" class="text-sm text-[#F49A13] hover:underline">
+                                            Reenviar Código
+                                        </button>
+                                    </div>
+                                    <div class="flex justify-end mt-6">
+                                        <button type="button" id="cancel-btn" class="mr-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-all">
+                                            Cancelar
+                                        </button>
+                                        <button type="submit" class="px-4 py-2 bg-[#F49A13] text-white rounded-lg hover:bg-[#D88000] transition-all shadow-md">
+                                            Guardar Cambios
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+     </div>
+
+    {% block content %}
+    {% endblock %}
+
+
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js')}}"></script>
     <script src="{{ url_for('static', filename='js/cliente.js') }}"></script>
     <script src="{{ url_for('static', filename='js/client_orders.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <span photo-profile-modal="{{ url_for('static', filename='Uploads/') }}"></span>
+    <script>
+        // Hamburger Menu Toggle
+        document.getElementById('menu-btn').addEventListener('click', function() {
+            this.classList.toggle('open');
+            document.getElementById('mobile-menu').classList.toggle('active');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuBtn = document.getElementById('menu-btn');
+            if (!mobileMenu.contains(event.target) && !menuBtn.contains(event.target) && mobileMenu.classList.contains('active')) {
+                menuBtn.classList.remove('open');
+                mobileMenu.classList.remove('active');
+            }
+        });
+
+        // Category Dropdown in Mobile Menu
+        document.getElementById('categories-dropdown-btn').addEventListener('click', function() {
+            const dropdown = document.getElementById('categories-dropdown');
+            dropdown.classList.toggle('hidden');
+            const icon = this.querySelector('i.fa-chevron-down');
+            icon.classList.toggle('rotate-180');
+        });
+
+        // Profile Modal Open/Close
+        function openProfileModal() {
+            const modal = document.getElementById('profileModal');
+            const overlay = document.getElementById('profileModalOverlay');
+            modal.classList.remove('hidden');
+            overlay.classList.add('opacity-100');
+            setTimeout(() => {
+                modal.querySelector('.transform').classList.add('modal-animate-in');
+            }, 10);
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profileModal');
+            const overlay = document.getElementById('profileModalOverlay');
+            modal.querySelector('.transform').classList.remove('modal-animate-in');
+            modal.querySelector('.transform').classList.add('modal-animate-out');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                overlay.classList.remove('opacity-100');
+                modal.querySelector('.transform').classList.remove('modal-animate-out');
+            }, 300);
+        }
+
+        document.getElementById('open-profile-modal').addEventListener('click', function(e) {
+            e.preventDefault();
+            openProfileModal();
+        });
+
+        document.getElementById('mobile-profile-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            openProfileModal();
+        });
+
+        document.getElementById('closeProfileModal').addEventListener('click', closeProfileModal);
+        document.getElementById('profileModalOverlay').addEventListener('click', closeProfileModal);
+
+        // Edit Form Toggle
+        document.getElementById('edit-profile-btn').addEventListener('click', function() {
+            const editForm = document.getElementById('edit-form');
+            editForm.classList.toggle('active');
+        });
+
+        document.getElementById('cancel-btn').addEventListener('click', function() {
+            const editForm = document.getElementById('edit-form');
+            editForm.classList.remove('active');
+        });
+
+        // Profile Picture Upload with Dynamic Update
+        document.getElementById('profile-image').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-pic').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+
+                const formData = new FormData();
+                formData.append('photo', file);
+                fetch('/update_profile_photo', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update profile picture dynamically with cache-busting
+                        const newSrc = '{{ url_for('static', filename='Uploads/') }}' + data.filename + '?t=' + new Date().getTime();
+                        document.getElementById('profile-pic').src = newSrc;
+                        const navbarProfilePic = document.querySelector('nav img[alt="Foto de perfil"]');
+                        if (navbarProfilePic) {
+                            navbarProfilePic.src = newSrc;
+                        }
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al actualizar la foto de perfil');
+                });
+            }
+        });
+
+        // Email Verification
+        const emailInput = document.querySelector('input[name="gmail"]');
+        const verificationSection = document.getElementById('verification-section');
+        const originalEmail = emailInput.dataset.original;
+
+        emailInput.addEventListener('input', function() {
+            if (this.value !== originalEmail && this.value) {
+                fetch('/request_email_verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_email: this.value })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        verificationSection.style.display = 'block';
+                    } else {
+                        alert(data.message);
+                    }
+                });
+            } else {
+                verificationSection.style.display = 'none';
+            }
+        });
+
+        document.getElementById('resend-code-btn').addEventListener('click', function() {
+            fetch('/request_email_verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_email: emailInput.value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Código reenviado');
+                } else {
+                    alert(data.message);
+                }
+            });
+        });
+
+        // Form Submission
+        document.getElementById('edit-profile-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('/update_profile', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('profile-name').textContent = data.user.name + ' ' + data.user.last_name;
+                    document.getElementById('profile-email').textContent = data.user.gmail;
+                    document.getElementById('edit-form').classList.remove('active');
+                    verificationSection.style.display = 'none';
+                    emailInput.dataset.original = data.user.gmail;
+                    alert('Perfil actualizado correctamente');
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar el perfil');
+            });
+        });
+    </script>
 
     {% block scripts %}
     {% endblock %}
-    
 </body>
+
 </html>

@@ -2,94 +2,332 @@
 
 {% block title %}Detalle de Producto{% endblock %}
 
-{% block content %}
- <div class="container mx-auto px-4 py-8 max-w-6xl">
-    <!-- Breadcrumb -->
-    <div class="text-sm text-gray-600 mb-6 flex items-center space-x-2">
-        <a href="{{ url_for('cliente_dashboard') }}" class="hover:text-[#F49A1A] transition-colors">Inicio</a>
-        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
-        <a href="#" class="hover:text-[#F49A1A] transition-colors">{{ product.category_name }}</a>
-        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
-        <span class="text-gray-800 font-medium">{{ product.name }}</span>
-    </div>
+{% block style %}
+<style>
+    .accordion-header i {
+        transition: transform 0.3s ease;
+    }
+    .accordion-header[aria-expanded="true"] i {
+        transform: rotate(180deg);
+    }
+    .product-card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+    }
+    .product-card:hover {
+        text-decoration: none;
+    }
+    .thumbnail-active {
+        border-color: #F49A1A;
+    }
+</style>
+{% endblock %}
 
-    <div class="md:flex gap-8">
-        <!-- Galería de imágenes con thumbnails verticales a la izquierda -->
-        <div class="md:w-1/2 mb-8 md:mb-0">
-            <div class="grid grid-cols-[60px_1fr] gap-3">
-                <!-- Thumbnails verticales a la izquierda -->
-                <div class="flex flex-col gap-2">
-                    <div class="border rounded p-1 cursor-pointer hover:border-[#F49A1A] transition-all duration-300">
-                        <img src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="Miniatura 2" class="w-full h-auto object-cover">
+{% block content %}
+<div class="container mx-auto px-4 py-4 max-w-6xl">
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-gray-600 mb-4 flex items-center space-x-2 overflow-x-auto" aria-label="Breadcrumb">
+        <a href="{{ url_for('cliente_dashboard') }}" class="hover:text-[#F49A1A] transition-colors whitespace-nowrap">Inicio</a>
+        <i class="fas fa-chevron-right text-xs text-gray-400" aria-hidden="true"></i>
+        <a href="#" class="hover:text-[#F49A1A] transition-colors whitespace-nowrap">{{ product.category_name }}</a>
+        <i class="fas fa-chevron-right text-xs text-gray-400" aria-hidden="true"></i>
+        <span class="text-gray-800 font-medium truncate">{{ product.name }}</span>
+    </nav>
+
+    <div class="lg:flex gap-8">
+        <!-- Galería de imágenes - con miniaturas verticales en desktop y carrusel en móvil -->
+        <div class="lg:w-1/2 mb-4 lg:mb-0 sticky top-4 self-start">
+            <!-- Vista móvil: Slider -->
+            <div class="lg:hidden relative">
+                <div class="product-slider overflow-hidden rounded-lg" role="region" aria-label="Galería de Producto" aria-roledescription="carrusel">
+                    <div class="slides-container flex transition-transform duration-300">
+                        <div class="slide min-w-full" role="group" aria-roledescription="slide" aria-label="Imagen 1 de {{ product.name }}">
+                            <img src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="{{ product.name }} - Imagen 1" class="w-full h-auto object-cover" loading="lazy">
+                        </div>
+                        {% if product.image2 %}
+                        <div class="slide min-w-full" role="group" aria-roledescription="slide" aria-label="Imagen 2 de {{ product.name }}">
+                            <img src="{{ url_for('static', filename='uploads/' + product.image2) }}" alt="{{ product.name }} - Imagen 2" class="w-full h-auto object-cover" loading="lazy">
+                        </div>
+                        {% endif %}
+                        {% if product.image3 %}
+                        <div class="slide min-w-full" role="group" aria-roledescription="slide" aria-label="Imagen 3 de {{ product.name }}">
+                            <img src="{{ url_for('static', filename='uploads/' + product.image3) }}" alt="{{ product.name }} - Imagen 3" class="w-full h-auto object-cover" loading="lazy">
+                        </div>
+                        {% endif %}
+                    </div>
+                    <!-- Controles de navegación -->
+                    <button class="slider-nav prev absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/70 rounded-full p-2 shadow-md" aria-label="Imagen anterior">
+                        <i class="fas fa-chevron-left text-gray-800" aria-hidden="true"></i>
+                    </button>
+                    <button class="slider-nav next absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/70 rounded-full p-2 shadow-md" aria-label="Imagen siguiente">
+                        <i class="fas fa-chevron-right text-gray-800" aria-hidden="true"></i>
+                    </button>
+                    <!-- Indicadores -->
+                    <div class="slider-dots absolute bottom-3 left-0 right-0 flex justify-center space-x-2" role="tablist" aria-label="Seleccionar imagen">
+                        <span class="dot w-3 h-3 rounded-full bg-white/70 cursor-pointer active" role="tab" aria-selected="true" tabindex="0" aria-label="Imagen 1" aria-controls="slide-0"></span>
+                        {% if product.image2 %}
+                        <span class="dot w-3 h-3 rounded-full bg-white/50 cursor-pointer" role="tab" aria-selected="false" tabindex="0" aria-label="Imagen 2" aria-controls="slide-1"></span>
+                        {% endif %}
+                        {% if product.image3 %}
+                        <span class="dot w-3 h-3 rounded-full bg-white/50 cursor-pointer" role="tab" aria-selected="false" tabindex="0" aria-label="Imagen 3" aria-controls="slide-2"></span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vista desktop: Thumbnails + Imagen principal -->
+            <div class="hidden lg:grid grid-cols-[100px_1fr] gap-4">
+                <!-- Thumbnails verticales -->
+                <div class="flex flex-col gap-3" role="tablist" aria-label="Miniaturas de Producto">
+                    <div class="thumbnail border-2 rounded-lg p-1 cursor-pointer hover:border-[#F49A1A] transition-all duration-300 thumbnail-active" data-index="0" role="tab" aria-selected="true" tabindex="0" aria-label="Ver imagen 1" aria-controls="main-image">
+                        <img src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="{{ product.name }} - Miniatura 1" class="w-full h-auto object-cover rounded" loading="lazy">
                     </div>
                     {% if product.image2 %}
-                    <div class="border rounded p-1 cursor-pointer hover:border-[#F49A1A] transition-all duration-300">
-                        <img src="{{ url_for('static', filename='uploads/' + product.image2) }}" alt="Miniatura 3" class="w-full h-auto object-cover">
+                    <div class="thumbnail border-2 rounded-lg p-1 cursor-pointer hover:border-[#F49A1A] transition-all duration-300" data-index="1" role="tab" aria-selected="false" tabindex="0" aria-label="Ver imagen 2" aria-controls="main-image">
+                        <img src="{{ url_for('static', filename='uploads/' + product.image2) }}" alt="{{ product.name }} - Miniatura 2" class="w-full h-auto object-cover rounded" loading="lazy">
                     </div>
                     {% endif %}
                     {% if product.image3 %}
-                    <div class="border rounded p-1 cursor-pointer hover:border-[#F49A1A] transition-all duration-300">
-                        <img src="{{ url_for('static', filename='uploads/' + product.image3) }}" alt="Miniatura 4" class="w-full h-auto object-cover">
+                    <div class="thumbnail border-2 rounded-lg p-1 cursor-pointer hover:border-[#F49A1A] transition-all duration-300" data-index="2" role="tab" aria-selected="false" tabindex="0" aria-label="Ver imagen 3" aria-controls="main-image">
+                        <img src="{{ url_for('static', filename='uploads/' + product.image3) }}" alt="{{ product.name }} - Miniatura 3" class="w-full h-auto object-cover rounded" loading="lazy">
                     </div>
                     {% endif %}
                 </div>
 
-                <!--Imagen principal -->
-                <div id="main-image" class="overflow-hidden group aspect-square">
-                    <img src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="Estuche organizador de relojes" class="w-full h- object-cover transition-transform duration-500 group-hover:scale-105">
+                <!-- Imagen principal -->
+                <div id="main-image" class="overflow-hidden rounded-lg shadow-lg" role="tabpanel" aria-label="Imagen principal del producto">
+                    <img src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="{{ product.name }} - Imagen principal" class="w-full h-full object-cover" loading="lazy">
                 </div>
             </div>
         </div>
 
-        <!-- Información del producto -->
-        <div class="md:w-1/2">
-            <div class="relative">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 leading-tight"></h1>
-                <p class="text-gray-600 mb-4">{{ product.name }} - {{ product.description }}</p>
-            </div>
-
-            <!-- Precio -->
-            <div class="rounded-lg p-4 mb-6">
-                <span class="text-3xl font-bold text-[#F49A1A]">RD${{ product.price }}</span>
+        <!-- Información del producto - con información destacada -->
+        <div class="lg:w-1/2">
+            <!-- Encabezado y nombre del producto -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-3">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">En stock</span>
+                    {% if product.review_count|default(0) > 0 %}
+                    <div class="flex items-center gap-1">
+                        <div class="flex text-yellow-400" role="img" aria-label="Calificación promedio: {{ product.avg_rating|default(0) }} de 5">
+                            {% for i in range(1, 6) %}
+                                {% if product.avg_rating|default(0) >= i %}
+                                    <i class="fas fa-star text-sm" aria-hidden="true"></i>
+                                {% elif product.avg_rating|default(0) > i-1 %}
+                                    <i class="fas fa-star-half-alt text-sm" aria-hidden="true"></i>
+                                {% else %}
+                                    <i class="far fa-star text-sm" aria-hidden="true"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="text-xs text-gray-500">{{ product.review_count|default(0) }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <h1 class="text-xl font-bold text-gray-800 mb-2 leading-tight">{{ product.name }}</h1>
+                <p class="text-sm text-gray-600 line-clamp-2">{{ product.description }}</p>
             </div>
             
-            <!-- Opciones de envío -->
-            <div class="mb-6">
-                <div class="flex items-center mb-3">
-                    <i class="fas fa-truck text-green-500 mr-3 text-xl"></i>
-                    <div>
-                        <div class="font-medium">Entrega a domicilio gratis</div>
+            <!-- Precio y Cupones -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-3">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-sm text-gray-500 line-through">RD${{ product.crossed_price|default('N/A') }}</span>
+                        <span class="text-lg font-bold">RD${{ product.price }}</span>
+                    </div>
+                    <span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-semibold">20% OFF</span>
+                </div>
+
+                <!-- Envío -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-truck text-green-500 text-lg" aria-hidden="true"></i>
+                        <div>
+                            <div class="text-sm font-medium">Envío gratis</div>
+                            <div class="text-xs text-gray-500">Rápido y Seguro</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Cantidad -->
-            <form action="{{ url_for('add_to_cart') }}" method="POST" class="add-to-cart-form">
+            <!-- Selección de cantidad -->
+            <form action="{{ url_for('add_to_cart') }}" method="POST" class="add-to-cart-form bg-white rounded-lg shadow-sm p-4 mb-3">
                 <input type="hidden" name="product_id" value="{{ product.id }}">
-                <div class="flex items-center mb-6">
-                    <span class="text-gray-700 w-24 font-medium">Cantidad:</span>
-                    <div class="flex overflow-hidden">
-                        <select name="quantity" class="border rounded-lg px-3 py-1.5 text-sm bg-gray-50 hover:bg-white transition-colors cursor-pointer">
+                <div class="flex items-center mb-4">
+                    <label for="quantity-select" class="text-gray-700 w-24 font-medium text-sm">Cantidad:</label>
+                    <div class="flex border rounded-lg overflow-hidden">
+                        <button type="button" class="quantity-btn minus bg-gray-100 px-3 py-2 hover:bg-gray-200 transition-colors" aria-label="Disminuir cantidad">
+                            <i class="fas fa-minus text-gray-600" aria-hidden="true"></i>
+                        </button>
+                        <select id="quantity-select" name="quantity" class="quantity-select border-0 text-center px-3 py-2 w-16 focus:ring-0 focus:outline-none" aria-label="Seleccionar cantidad">
                             {% for i in range(1, 11) %}
-                            <option value="{{ i }}" {% if i==product.quantity %}selected{% endif %}>{{ i }}</option>
+                            <option value="{{ i }}" {% if i==1 %}selected{% endif %}>{{ i }}</option>
                             {% endfor %}
                         </select>
+                        <button type="button" class="quantity-btn plus bg-gray-100 px-3 py-2 hover:bg-gray-200 transition-colors" aria-label="Aumentar cantidad">
+                            <i class="fas fa-plus text-gray-600" aria-hidden="true"></i>
+                        </button>
                     </div>
+                </div>
+            
+                <!-- Botones de acción - -->
+                <div class="hidden lg:grid lg:grid-cols-1 lg:gap-2">
+                    <button type="button" class="add-to-cart-btn bg-[#F49A1A]/10 text-[#F49A1A] font-bold py-3 px-6 rounded-full text-sm border border-[#F49A1A] hover:bg-[#F49A1A]/20 transition-all duration-300" data-product-id="{{ product.id }}">
+                        <i class="fas fa-shopping-cart mr-2" aria-hidden="true"></i>
+                        Añadir al carrito
+                    </button>
                 </div>
             </form>
             
-            <!-- Botones de acción -->
-            <div class="flex space-x-4 mb-6">
-                <button type="button" class="add-to-cart-btn bg-[#F49A1A] w-full text-white font-bold py-3 px-6 rounded-full text-lg hover:bg-[#F49A1A]/90 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md flex items-center justify-center" data-product-id="{{ product.id }}">
-                    <i class="fas fa-shopping-cart mr-2"></i>
-                    Añadir al carrito
+                <!-- Acordeones de información -->
+            <div class="accordion-item">
+                <button class="accordion-header w-full flex items-center justify-between p-4" aria-expanded="false" aria-controls="panel-ratings">
+                    <span class="font-medium">Calificaciones y reseñas</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-500">{{ review_count|default(0) }}</span>
+                        <i class="fas fa-chevron-down text-gray-400 transition-transform" aria-hidden="true"></i>
+                    </div>
                 </button>
+                <div id="panel-ratings" class="accordion-content px-4 pb-4 hidden">
+                    <!-- Resumen de calificaciones -->
+                    <div class="mb-6">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="text-4xl font-bold text-gray-800" id="avg-rating">{{ avg_rating|default('0.0') }}</div>
+                            <div class="flex flex-col">
+                                <div class="flex text-yellow-400 mb-1" id="summary-stars" role="img" aria-label="Calificación promedio: {{ avg_rating|default(0) }} de 5">
+                                    {% for i in range(1, 6) %}
+                                        {% if avg_rating|default(0) >= i %}
+                                            <i class="fas fa-star" aria-hidden="true"></i>
+                                        {% elif avg_rating|default(0) > i-1 %}
+                                            <i class="fas fa-star-half-alt" aria-hidden="true"></i>
+                                        {% else %}
+                                            <i class="far fa-star" aria-hidden="true"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <div class="text-xs text-gray-500">Basado en <span id="summary-count">{{ review_count|default(0) }}</span> reseñas</div>
+                            </div>
+                        </div>
+                        <!-- Distribución de estrellas -->
+                        <div class="space-y-1">
+                            {% for i in range(5, 0, -1) %}
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs w-6">{{ i }} ★</span>
+                                <div class="h-2 bg-gray-200 rounded-full flex-1 overflow-hidden">
+                                    <div class="h-full bg-yellow-400" style="width: {{ (review_count > 0) and ((reviews|selectattr('rating', 'eq', i)|list|length / review_count) * 100)|default(0)|round|int }}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-500 star-count-{{ i }}">{{ reviews|selectattr('rating', 'eq', i)|list|length|default(0) }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <!-- Lista de comentarios -->
+                    <div id="comments-container" class="space-y-4">
+                        {% if reviews %}
+                            {% for review in reviews %}
+                            <div class="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <div class="flex text-yellow-400 mb-1" role="img" aria-label="Calificación: {{ review.rating }} de 5">
+                                            {% for i in range(1, 6) %}
+                                                {% if review.rating >= i %}
+                                                    <i class="fas fa-star text-sm" aria-hidden="true"></i>
+                                                {% else %}
+                                                    <i class="far fa-star text-sm" aria-hidden="true"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <h4 class="text-sm font-medium">{{ review.user_name }}</h4>
+                                    </div>
+                                    <div class="text-xs text-gray-500">{{ review.created_at.strftime('%d/%m/%Y') }}</div>
+                                </div>
+                                <p class="text-sm text-gray-700">{{ review.comment }}</p>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-gray-500 py-4" id="no-reviews">
+                                <i class="far fa-comment-alt text-2xl mb-2" aria-hidden="true"></i>
+                                <p class="text-sm">Aún no hay comentarios para este producto</p>
+                                <p class="text-xs">¡Sé el primero en dejar tu opinión!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                        
+                    <!-- Formulario de calificación -->
+                    <div class="mt-6" id="rating-form-container" data-user-logged-in="{{ 'true' if session.user_id else 'false' }}">
+                        <h3 class="text-sm font-semibold mb-3">Deja tu opinión</h3>
+                        <div id="rating-form">
+                            <div class="mb-3">
+                                <label for="user-rating" class="block text-xs font-medium text-gray-700 mb-1">Tu calificación</label>
+                                <div class="flex user-rating" id="user-rating" role="radiogroup" aria-label="Seleccionar calificación">
+                                    {% for i in range(1, 6) %}
+                                    <i class="rating-star far fa-star text-xl cursor-pointer text-yellow-400 hover:text-yellow-500" data-rating="{{ i }}" role="radio" aria-checked="false" tabindex="0"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="comment" class="block text-xs font-medium text-gray-700 mb-1">Tu comentario (opcional)</label>
+                                <textarea id="comment" rows="3" class="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:border-[#F49A1A] focus:ring focus:ring-[#F49A1A] focus:ring-opacity-20" placeholder="Escribe tu experiencia con este producto..."></textarea>
+                            </div>
+                            <button type="button" id="submit-rating" class="w-full bg-[#F49A1A] text-white py-2 px-4 rounded-full text-sm hover:bg-[#F49A1A]/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F49A1A]" disabled>Enviar calificación</button>
+                        </div>
+                        <div id="already-rated" class="hidden text-center text-gray-700 py-3 text-sm">Ya has calificado este producto</div>
+                        <div id="login-required" class="hidden">
+                            <p class="text-center text-gray-700 mb-2 text-sm">Debes iniciar sesión para calificar</p>
+                            <a href="{{ url_for('login') }}" class="block w-full text-center bg-[#F49A1A] text-white py-2 px-4 rounded-full text-sm hover:bg-[#F49A1A]/90 transition-colors">Iniciar sesión</a>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
+    </div>
 
-            
-            <!-- Línea divisoria alineada con la imagen principal -->
-            <div class="border-t border-gray-200 md:mt-0"></div>
+    <!-- Productos recomendados - grid -->
+    <div class="mt-8">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">También te puede gustar</h2>
+        <div class="product-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+            {% for product in recommended_products %}
+            <a href="{{ url_for('product_detail', product_id=product.id) }}">
+                <div class="w-full flex flex-col gap-1 p-1 rounded-md transition-all duration-300 bg-inherit hover:bg-white hover:shadow-md cursor-pointer hover:border hover:border-gray-100">
+                    <div class="w-full h-32 sm:h-36 md:h-40 overflow-hidden">
+                        <img class="w-full h-full object-cover object-center" src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="{{ product.name }}">
+                    </div>
+                    
+                    <div class="p-1">
+                        <p class="text-gray-500 text-xs line-clamp-2 w-full">
+                            <span class="text-sm font-medium text-gray-700">{{ product.name }}</span>
+                            <span class="hidden sm:inline">{{ product.description }}</span>
+                        </p>
+                        
+                        <div class="flex justify-between items-center mt-1">
+                            <p class="text-xs font-bold text-[#F49A13]">
+                                RD$<span class="text-sm sm:text-base">{{ product.price }}</span>
+                            </p>
+        
+                            <button type="button" class="add-to-cart-btn w-8 h-8 rounded-full flex items-center justify-center focus:outline-none hover:bg-gray-100" data-product-id="{{ product.id }}">
+                                <i class="fa-solid fa-cart-plus text-sm sm:text-base text-black"></i>
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
         </div>
     </div>
 </div>
+
+<!-- Botón fijo en móvil - -->
+<div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-50">
+    <div class="grid grid-cols1 gap-3">
+        <button type="button" class="add-to-cart-btn-mobile bg-[#F49A1A]/10 text-[#F49A1A] font-bold py-2 px-4 rounded-full text-sm border border-[#F49A1A] hover:bg-[#F49A1A]/20 transition-all duration-300" data-product-id="{{ product.id }}">
+            <i class="fas fa-shopping-cart mr-1" aria-hidden="true"></i>
+            Añadir al carrito
+        </button>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/product_evaluation.js')}}"></script>
 {% endblock %}

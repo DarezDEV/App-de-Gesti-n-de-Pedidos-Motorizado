@@ -25,11 +25,6 @@
   .tab-scroll::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
-  @media (max-width: 640px) {
-    .tab-scroll {
-      justify-content: flex-start;
-    }
-  }
   .notification {
     position: fixed;
     top: 20px;
@@ -56,12 +51,46 @@
   .notification-body {
     font-size: 14px;
   }
+  body {
+    font-size: 16px;
+  }
+  @media (max-width: 640px) {
+    .tab-scroll {
+      justify-content: flex-start;
+    }
+    .tab-btn {
+      padding: 0.5rem 1rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+    }
+    main {
+      padding: 1rem;
+    }
+    .notification {
+      top: auto;
+      bottom: 20px;
+      right: 20px;
+      left: 20px;
+      margin: 0 auto;
+      width: calc(100% - 40px);
+    }
+    body {
+      font-size: 14px;
+    }
+  }
+  @media (max-width: 480px) {
+    .pedido .flex {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Contenido principal -->
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 z-10">
   <div class="container mx-auto max-w-4xl">
     <h1 class="text-2xl font-bold text-center text-primary mb-6 sm:mb-8">Mis Pedidos</h1>
 
@@ -135,6 +164,5 @@
       </div>
     </div>
   </div>
-
 </main>
 {% endblock %}

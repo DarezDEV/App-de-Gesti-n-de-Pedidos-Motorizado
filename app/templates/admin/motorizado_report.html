@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Rendimiento de Motorizados</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 3px solid #F49A13;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 5px;
+            background-color: #F49A13;
+            border-radius: 10px;
+        }
+        
+        .logo {
+            margin-bottom: 20px;
+        }
+        
+        .logo svg {
+            height: 60px;
+            fill: #F49A13;
+        }
+        
+        .date-section {
+            text-align: right;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #777;
+            font-weight: 500;
+        }
+        
+        .summary {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #F49A13;
+        }
+        
+        .summary h2 {
+            color: #F49A13;
+            margin-top: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .summary p {
+            margin: 5px 0;
+            font-size: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background-color: #F49A13;
+            color: white;
+            font-weight: 500;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .rating {
+            display: flex;
+            align-items: center;
+        }
+        
+        .rating-number {
+            margin-right: 10px;
+            font-weight: 600;
+        }
+        
+        .rating-stars {
+            position: relative;
+            display: inline-block;
+            color: #FFD700;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .badge-warning {
+            background-color: #FFC107;
+            color: #333;
+        }
+        
+        .badge-danger {
+            background-color: #F44336;
+            color: white;
+        }
+        
+        @media print {
+            body {
+                background-color: #fff;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-9-1a2 2 0 0 1 4 0v1h-4V6zm9 12H5V9h14v9z"/>
+                    <path d="M12 12a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                </svg>
+            </div>
+            <h1>Reporte de Rendimiento de Motorizados</h1>
+            <p>Análisis detallado de entregas y evaluaciones</p>
+        </div>
+        
+        <div class="date-section">
+            Generado el: {{ current_date }}
+        </div>
+        
+        <div class="summary">
+            <h2>Resumen General</h2>
+            <p><strong>Total de Motorizados:</strong> {{ motorizados|length }}</p>
+            <p><strong>Total de Entregas:</strong> {{ motorizados|sum(attribute='total_deliveries') }}</p>
+            <p><strong>Calificación Promedio:</strong> {{ avg_rating }}</p>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nombre del Motorizado</th>
+                    <th>Total de Entregas</th>
+                    <th>Calificación</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for motorizado in motorizados %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ motorizado.motorizado_name }}</td>
+                    <td>{{ motorizado.total_deliveries }}</td>
+                    <td>
+                        <div class="rating">
+                            <span class="rating-number">{{ motorizado.avg_rating|round(1) if motorizado.avg_rating else 'N/A' }}</span>
+                            <div class="rating-stars">
+                                {% if motorizado.avg_rating %}
+                                    {% for i in range(5) %}
+                                        {% if i < motorizado.avg_rating|int %}
+                                            ★
+                                        {% elif i < motorizado.avg_rating %}
+                                            ☆
+                                        {% else %}
+                                            ☆
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if motorizado.avg_rating and motorizado.avg_rating >= 4.5 %}
+                            <span class="badge badge-success">Excelente</span>
+                        {% elif motorizado.avg_rating and motorizado.avg_rating >= 3.5 %}
+                            <span class="badge badge-success">Bueno</span>
+                        {% elif motorizado.avg_rating and motorizado.avg_rating >= 2.5 %}
+                            <span class="badge badge-warning">Regular</span>
+                        {% elif motorizado.avg_rating %}
+                            <span class="badge badge-danger">Necesita Mejorar</span>
+                        {% else %}
+                            <span>Sin evaluaciones</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="footer">
+            <p>&copy; {{ current_date.split('/')[2] }} - Sistema de Gestión de Entregas</p>
+            <p>Este es un documento confidencial y solo para uso interno.</p>
+        </div>
+    </div>
+</body>
+</html>

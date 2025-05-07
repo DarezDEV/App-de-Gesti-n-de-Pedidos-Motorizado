@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.isConfirmed) {
                     const form = document.createElement('form');
                     form.method = 'POST';
-                    form.action = `/categories/${categoryId}/delete`;
+                    form.action = `/categoria/${categoryId}/delete`;
                     document.body.appendChild(form);
                     form.submit();
                 }
@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const categoryId = this.getAttribute('data-category-id');
             
             // Set form action
-            editProductForm.action = `/update_product/${productId}/${categoryId}`;
+            editProductForm.action = `/actualizar/productos/${productId}/${categoryId}`;
             
             // Populate form fields
             editProductId.value = productId;

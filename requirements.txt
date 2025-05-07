@@ -1,0 +1,13 @@
+Flask==2.3.2
+flask-socketio==5.3.6
+flask-bcrypt==1.0.1
+flask-mail==0.9.1
+flask-dance==6.3.0
+mysql-connector-python==8.3.0
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.4.2
+joblib==1.4.0
+python-engineio==4.8.1
+python-socketio==5.11.1
+pdfkit

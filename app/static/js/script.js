@@ -1,241 +1,206 @@
-
-window.onload = function () {
-    let flash = document.getElementById('flash');
-    if (flash) {
-        flash.classList.add('slide-in');  // Agregar animación de entrada
-        setTimeout(() => {
-            closeFlash();
-        }, 3000);
-    }
-};
-
-function closeFlash() {
-    let flash = document.getElementById('flash');
-    if (flash) {
-        flash.classList.remove('slide-in'); // Eliminar animación de entrada
-        flash.classList.add('slide-out');  // Agregar animación de salida
-        setTimeout(() => {
-            flash.style.display = 'none';
-        }, 500);
-    }
-}
-
-function previewImage(userId) {
-    const fileInput = document.getElementById(`photoInput${userId}`);
-    const preview = document.getElementById(`preview${userId}`);
-    
-    const file = fileInput.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-// static/js/global_counter.js
-document.addEventListener('DOMContentLoaded', function() {
-  const pendingOrdersBadge = document.getElementById('pending-orders-badge');
-  
-  if (!pendingOrdersBadge) return;
-  
-  // Verificar si estamos en la página de admin_orders
-  const isOrdersPage = window.location.pathname.includes('/admin/orders') || 
-                       window.location.pathname.includes('/motorizado/pedidos');
-  
-  if (isOrdersPage) {
-    // Si estamos en la página de pedidos, el contador se actualizará 
-    // a través del código existente en admin_orders.js
-    return;
-  }
-  
-  // Para otras páginas, usar localStorage para obtener el conteo
-  const pendingCount = localStorage.getItem('pendingOrdersCount') || '0';
-  updateBadge(parseInt(pendingCount, 10));
-  
-  // Conectar a socket.io para recibir actualizaciones en tiempo real
-  try {
-    const socket = io('/admin');
-    
-    // Escuchar nueva orden
-    socket.on('new_order', function(order) {
-      if (order.status === 'pendiente') {
-        const currentCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0', 10);
-        const newCount = currentCount + 1;
-        localStorage.setItem('pendingOrdersCount', newCount.toString());
-        updateBadge(newCount);
-      }
-    });
-    
-    // Escuchar actualización de estado
-    socket.on('order_status_update', function(order) {
-      // Como solo tenemos la información del pedido actualizado,
-      // solicitar a la página principal que recalcule el conteo
-      window.dispatchEvent(new CustomEvent('recalculate-pending'));
-    });
-  } catch (error) {
-    console.error('Error al conectar con socket.io:', error);
-  }
-  
-  function updateBadge(count) {
-    if (count > 0) {
-      pendingOrdersBadge.textContent = count;
-      pendingOrdersBadge.classList.remove('hidden');
-    } else {
-      pendingOrdersBadge.classList.add('hidden');
-    }
-  }
-});
-
-
-
-
-
-
-// spinner 
-
-// Agregar el HTML del spinner al final del body (puedes colocarlo donde prefieras)
-document.addEventListener('DOMContentLoaded', function() {
-    // Crear el elemento spinner si no existe
-    if (!document.getElementById('loading-spinner')) {
-        const spinnerHTML = `
-          <div id="loading-spinner" class="fixed inset-0 z-[900] flex items-center justify-center bg-black bg-opacity-50 hidden">
-            <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center z-[1000]">
-              <div class="relative">
-                <!-- Círculo exterior giratorio -->
-                <div class="w-16 h-16 border-4 border-[#F49A13] border-t-transparent rounded-full animate-spin"></div>
-                <!-- Ícono de motocicleta en el centro -->
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <i class="fas fa-motorcycle text-[#F49A13] text-xl"></i>
-                </div>
-              </div>
-              <p class="mt-4 text-gray-700 font-medium">Procesando...</p>
-            </div>
-          </div>
-        `;
-        
-        const spinnerContainer = document.createElement('div');
-        spinnerContainer.innerHTML = spinnerHTML;
-        document.body.appendChild(spinnerContainer.firstChild);
-      }
-      
-      const spinner = document.getElementById('loading-spinner');
-      
-      // Asegurar que el spinner esté oculto al cargar la página
-      spinner.classList.add('hidden');
-    
-      // Variable para rastrear si la página se está cargando inicialmente
-      let isInitialPageLoad = true;
-      
-      // Después de un breve retraso, marca que la carga inicial ha terminado
-      setTimeout(() => {
-        isInitialPageLoad = false;
-      }, 500);
-    
-      // Modificar función addProductToCart para mostrar el spinner
-      const originalAddToCart = window.addProductToCart;
-      if (originalAddToCart) {
-        window.addProductToCart = function(productId, quantity, button) {
-          if (button) button.disabled = true; // Deshabilitar botón
-          spinner.classList.remove('hidden'); // Mostrar spinner
-          
-          fetch('/add_to_cart/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ product_id: productId, quantity: quantity })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              updateCartCounter(data.cart_count);
-              showFlash();
-            }
-          })
-          .catch(error => console.error('Error:', error))
-          .finally(() => {
-            if (button) button.disabled = false; // Rehabilitar botón
-            spinner.classList.add('hidden'); // Ocultar spinner
-          });
-        };
-      }
-      
-      // Resto de las funciones permanecen igual...
-      
-      // Interceptar fetch con control para evitar mostrar en carga inicial
-      const originalFetch = window.fetch;
-      window.fetch = function(url, options = {}) {
-        // No mostrar el spinner durante la carga inicial de la página
-        if (isInitialPageLoad) {
-          return originalFetch.apply(this, arguments);
-        }
-        
-        // No mostrar el spinner para peticiones específicas
-        const excludedUrls = ['/api/status', '/heartbeat']; 
-        const shouldShowSpinner = !excludedUrls.some(excluded => url.includes(excluded));
-        
-        if (shouldShowSpinner) {
-          spinner.classList.remove('hidden'); // Mostrar spinner
-        }
-        
-        return originalFetch.apply(this, arguments)
-          .finally(() => {
-            if (shouldShowSpinner) {
-              spinner.classList.add('hidden'); // Ocultar spinner
-            }
-          });
-      };
-      
-      // Interceptar XMLHttpRequest con control para evitar mostrar en carga inicial
-      const originalXHROpen = XMLHttpRequest.prototype.open;
-      const originalXHRSend = XMLHttpRequest.prototype.send;
-      
-      XMLHttpRequest.prototype.open = function() {
-        this._url = arguments[1]; // Guardar la URL
-        return originalXHROpen.apply(this, arguments);
-      };
-      
-      XMLHttpRequest.prototype.send = function() {
-        // No mostrar el spinner durante la carga inicial de la página
-        if (isInitialPageLoad) {
-          return originalXHRSend.apply(this, arguments);
-        }
-        
-        // No mostrar el spinner para peticiones específicas
-        const excludedUrls = ['/api/status', '/heartbeat'];
-        const shouldShowSpinner = !excludedUrls.some(excluded => this._url && this._url.includes(excluded));
-        
-        if (shouldShowSpinner) {
-          spinner.classList.remove('hidden'); // Mostrar spinner
-        }
-        
-        this.addEventListener('loadend', function() {
-          if (shouldShowSpinner) {
-            spinner.classList.add('hidden'); // Ocultar spinner
-          }
-        });
-        
-        return originalXHRSend.apply(this, arguments);
-      };
-    
-    // Para formularios que envían datos con AJAX
+document.addEventListener('DOMContentLoaded', function () {
     const forms = document.querySelectorAll('form');
     forms.forEach(form => {
-      // Solo si el formulario no tiene el atributo noajax
-      if (!form.hasAttribute('noajax')) {
-        form.addEventListener('submit', function(event) {
-          // Verificar si el formulario tiene validación HTML5 y si es válido
-          if (!form.hasAttribute('novalidate') && !form.checkValidity()) {
-            return; // No mostrar spinner si el formulario no es válido
-          }
-          
-          // Si el formulario tiene la clase ajax-form o data-ajax=true, 
-          // asumimos que ya está manejado por otro código AJAX
-          if (!form.classList.contains('ajax-form') && !form.getAttribute('data-ajax')) {
-            // Mostrar el spinner
-            spinner.classList.remove('hidden');
-          }
-        });
-      }
+      form.addEventListener('submit', function () {
+        showSpinner();
+      });
     });
   });
+
+  // Función para mostrar el spinner
+  function showSpinner() {
+    const spinner = document.getElementById('loading-spinner');
+    if (spinner) spinner.classList.remove('hidden');
+  }
+
+  // Función para ocultar el spinner (por si la necesitas después)
+  function hideSpinner() {
+    const spinner = document.getElementById('loading-spinner');
+    if (spinner) spinner.classList.add('hidden');
+  }
+
+// Función para mostrar notificaciones
+function showNotification(title, message, type) {
+  const notification = document.createElement('div');
+  notification.setAttribute('role', 'alert');
+
+  let className, iconPath, messageClass;
+  if (type === 'error') {
+      className = 'flash-message slide-in';
+      iconPath = 'M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z';
+      messageClass = 'message';
+  } else if (type === 'success') {
+      className = 'flash-message-success slide-in';
+      iconPath = 'M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z';
+      messageClass = 'message-success';
+  } else {
+      className = 'flash-message slide-in';
+      iconPath = '';
+      messageClass = 'message';
+  }
+
+  notification.className = className;
+  notification.innerHTML = `
+      <svg class="${type === 'success' ? 'flash-icon-success' : 'flash-icon'}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path d="${iconPath}"/>
+      </svg>
+      <div class="${type === 'success' ? 'message-container-success' : 'message-container'}">
+          <span class="${messageClass}"><strong>${title}:</strong></span> ${message}
+      </div>
+      <button onclick="this.parentElement.remove()" class="${type === 'success' ? 'flash-close-success' : 'flash-close'}">×</button>
+  `;
+
+  document.body.appendChild(notification);
+  setTimeout(() => {
+      notification.classList.add('fade-out');
+      setTimeout(() => notification.remove(), 500);
+  }, 5000);
+}
+
+// Función para actualizar el contador del carrito
+function updateCartCounter(count) {
+  const counter = document.getElementById('cart-counter');
+  if (counter) {
+      counter.textContent = count;
+      counter.classList.add('scale-125');
+      setTimeout(() => counter.classList.remove('scale-125'), 300);
+      console.log("Contador actualizado a:", count);
+  }
+}
+
+// Función para cerrar el flash message
+function closeFlash() {
+  const flash = document.getElementById('flash');
+  if (flash) {
+      flash.classList.remove('slide-in');
+      flash.classList.add('slide-out');
+      setTimeout(() => flash.style.display = 'none', 500);
+  }
+}
+
+// Función para previsualizar la imagen
+function previewImage(userId) {
+  const fileInput = document.getElementById(`photoInput${userId}`);
+  const preview = document.getElementById(`preview${userId}`);
+  const file = fileInput.files[0];
+  if (file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+          preview.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+  }
+}
+
+// Función para configurar el spinner
+function setupSpinner() {
+  if (!document.getElementById('loading-spinner')) {
+      const spinnerHTML = `
+          <div id="loading-spinner" class="fixed inset-0 z-[900] flex items-center justify-center bg-black bg-opacity-50 hidden">
+              <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center z-[1000]">
+                  <div class="relative">
+                      <div class="w-16 h-16 border-4 border-[#F49A13] border-t-transparent rounded-full animate-spin"></div>
+                      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                          <i class="fas fa-motorcycle text-[#F49A13] text-xl"></i>
+                      </div>
+                  </div>
+                  <p class="mt-4 text-gray-700 font-medium">Procesando...</p>
+              </div>
+          </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', spinnerHTML);
+  }
+
+  let isInitialPageLoad = true;
+  setTimeout(() => isInitialPageLoad = false, 500);
+
+  const originalAddToCart = window.addProductToCart;
+  if (originalAddToCart) {
+      window.addProductToCart = function (productId, quantity, button) {
+          if (button) button.disabled = true;
+          showSpinner();
+          fetch('/add_to_cart/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ product_id: productId, quantity: quantity })
+          })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      updateCartCounter(data.cart_count);
+                      showFlash();
+                  }
+              })
+              .catch(error => console.error('Error:', error))
+              .finally(() => {
+                  if (button) button.disabled = false;
+                  hideSpinner();
+              });
+      };
+  }
+
+  const originalFetch = window.fetch;
+  window.fetch = function (url, options = {}) {
+      if (isInitialPageLoad) return originalFetch.apply(this, arguments);
+
+      const excludedUrls = ['/api/status', '/heartbeat'];
+      const shouldShowSpinner = !excludedUrls.some(excluded => url.includes(excluded));
+      if (shouldShowSpinner) showSpinner();
+
+      return originalFetch.apply(this, arguments).finally(() => {
+          if (shouldShowSpinner) hideSpinner();
+      });
+  };
+
+  const forms = document.querySelectorAll('form:not([noajax])');
+  forms.forEach(form => {
+      form.addEventListener('submit', function (event) {
+          if (!form.hasAttribute('novalidate') && !form.checkValidity()) return;
+          if (!form.classList.contains('ajax-form') && !form.getAttribute('data-ajax')) {
+              showSpinner();
+          }
+      });
+  });
+}
+
+// Función para solicitar permiso de notificaciones
+function requestNotificationPermission() {
+  if (Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+          console.log(permission === 'granted' ? 'Notificaciones permitidas' : 'Notificaciones denegadas');
+      });
+  }
+}
+
+function mostrarAlertaEliminacion(productId) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¿Seguro que quieres eliminar este producto?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#F49A13', // Color principal de tu app
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Enviar el formulario cuando se confirma
+            document.getElementById('deleteForm' + productId).submit();
+        }
+    });
+}
+
+// Inicialización al cargar el DOM
+document.addEventListener('DOMContentLoaded', function () {
+  const flash = document.getElementById('flash');
+  if (flash) {
+      flash.classList.add('slide-in');
+      setTimeout(closeFlash, 3000);
+  }
+
+  handleGlobalCounter();
+  setupSpinner();
+  setupProfileModal();
+  requestNotificationPermission();
+});
+

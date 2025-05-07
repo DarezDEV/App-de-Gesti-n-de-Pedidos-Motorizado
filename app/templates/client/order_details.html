@@ -10,10 +10,81 @@
     .text-primary { color: var(--color-primary); }
     .border-primary { border-color: var(--color-primary); }
     .hover\:bg-primary-dark:hover { background-color: #e08a03; }
+    .hover\:bg-primary-light:hover { background-color: #fdf1e0; }
+    
+    /* Button styles */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #e08a03;
+    }
+    
+    .btn-outline {
+      border: 1px solid #d1d5db;
+      color: #4b5563;
+    }
+    
+    .btn-outline:hover {
+      background-color: #f9fafb;
+    }
+    
+    .btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    
+    .btn svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-right: 0.375rem;
+    }
   </style>
 {% endblock %}
 {% block content %}
-  <div class="container mx-auto px-4 py-8">
+<main class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 ">
+  <nav class="flex justify-start w-full px-4 mb-4" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+            <a href="{{ url_for('cliente_dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-amber-500">
+                Inicio
+            </a>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <a href="{{ url_for('client_orders') }}" class="ml-1 text-sm font-medium text-gray-700 hover:text-amber-500 md:ml-2">Pedidos</a>
+            </div>
+        </li>
+        <li aria-current="page">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Detalles del Pedido #{{ order['order_id'] }}</span>
+            </div>
+        </li>
+    </ol>
+  </nav>
+  <div class="container mx-auto px-4 py-2">
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
       <!-- Header -->
       <div class="bg-primary p-4 flex justify-between items-center">
@@ -91,139 +162,216 @@
         </div>
 
         <!-- Información del repartidor -->
-        {% if order['motorizado_name'] and (order['status'] == 'en camino' or order['status'] == 'entregado') %}
+        {% if order['motorizado_name'] and (order['status'] == 'entregado') %}
         <div class="mb-6">
-          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Información del Repartidor</h2>
+          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Evaluación del Servicio</h2>
+          {% if evaluation %}
+          <!-- Mostrar la evaluación existente -->
           <div class="bg-gray-50 p-4 rounded-lg">
-            <p class="font-medium">{{ order['motorizado_name'] }} {{ order['motorizado_last_name'] }}</p>
-            {% if order['status'] == 'entregado' %}
-            <p class="text-sm text-gray-600">Tu pedido ha sido entregado por este repartidor.</p>
-            {% else %}
-            <p class="text-sm text-gray-600">Tu pedido está siendo entregado por este repartidor.</p>
+            <div class="flex items-center mb-2">
+              <p class="font-medium mr-2">Tu calificación:</p>
+              <div class="flex">
+                {% for i in range(1, 6) %}
+                  <span class="text-2xl {% if i <= evaluation['rating'] %}text-yellow-400{% else %}text-gray-300{% endif %}">★</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% if evaluation['comment'] %}
+            <div class="mt-2 p-3 bg-white rounded border border-gray-200">
+              <p class="text-gray-700">{{ evaluation['comment'] }}</p>
+            </div>
             {% endif %}
           </div>
-        </div>
-        {% endif %}
-
-        <!-- Seguimiento del pedido -->
-        <div class="mb-6">
-          <h2 class="text-lg font-semibold mb-3 border-b pb-2">Estado del Pedido</h2>
-          <div class="relative">
-            <div class="absolute left-5 top-0 h-full border-l-2 border-dashed border-gray-300"></div>
-            <!-- Paso 1: Pedido Recibido -->
-            <div class="relative mb-6">
-              <div class="flex items-center">
-                <div class="bg-primary rounded-full h-10 w-10 flex items-center justify-center z-10">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
+          {% else %}
+          <!-- Mostrar el formulario para evaluar con estilo mejorado -->
+          <form action="{{ url_for('submit_evaluation_moto', order_id=order['order_id']) }}" method="POST" class="space-y-4 bg-gray-50 p-4 rounded-lg">
+            <div>
+              <label class="block text-gray-700 font-medium mb-2">¿Cómo calificarías tu experiencia?</label>
+              <div class="star-rating flex items-center">
+                <div class="flex space-x-1">
+                  {% for i in range(1, 6) %}
+                  <div class="rating-group">
+                    <input type="radio" name="rating" value="{{ i }}" id="rating-{{ i }}" required class="hidden peer" {% if i == 5 %}checked{% endif %}>
+                    <label for="rating-{{ i }}" class="cursor-pointer text-3xl text-gray-300 hover:text-yellow-400 peer-checked:text-yellow-400 transition-colors duration-200">★</label>
+                  </div>
+                  {% endfor %}
                 </div>
-                <div class="ml-4">
-                  <h3 class="font-medium">Pedido Recibido</h3>
-                  {% if order['status'] == 'entregado' %}
-                  <p class="text-sm text-gray-600">Tu pedido ha sido registrado exitosamente.</p>
-                  {% else %}
-                  <p class="text-sm text-gray-600">Tu pedido ha sido registrado exitosamente.</p>
-                  {% endif %}
-                </div>
+                <span class="ml-3 text-sm text-gray-500 rating-text">Excelente</span>
               </div>
             </div>
-            <!-- Paso 2: En Preparación -->
-            <div class="relative mb-6">
-              <div class="flex items-center">
-                <div class="{% if order['status'] != 'pendiente' %}bg-primary{% else %}bg-gray-300{% endif %} rounded-full h-10 w-10 flex items-center justify-center z-10">
-                  {% if order['status'] != 'pendiente' %}
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  {% else %}
-                  <span class="text-white font-medium">2</span>
-                  {% endif %}
-                </div>
-                <div class="ml-4">
-                  <h3 class="font-medium">En Preparación</h3>
-                  <p class="text-sm text-gray-600">Estamos preparando tu pedido.</p>
-                </div>
-              </div>
+            <div>
+              <label for="comment" class="block text-gray-700 font-medium mb-2">Comparte tu opinión (opcional):</label>
+              <textarea name="comment" id="comment" rows="3" placeholder="¿Qué te pareció el servicio? Tu opinión nos ayuda a mejorar..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"></textarea>
             </div>
-            <!-- Paso 3: En Camino -->
-            <div class="relative mb-6">
-              <div class="flex items-center">
-                <div class="{% if order['status'] == 'en camino' or order['status'] == 'entregado' %}bg-primary{% else %}bg-gray-300{% endif %} rounded-full h-10 w-10 flex items-center justify-center z-10">
-                  {% if order['status'] == 'en camino' or order['status'] == 'entregado' %}
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  {% else %}
-                  <span class="text-white font-medium">3</span>
-                  {% endif %}
-                </div>
-                <div class="ml-4">
-                  <h3 class="font-medium">En Camino</h3>
-                  <p class="text-sm text-gray-600">Tu pedido está en camino hacia tu dirección.</p>
-                </div>
-              </div>
-            </div>
-            <!-- Paso 4: Entregado -->
-            <div class="relative">
-              <div class="flex items-center">
-                <div class="{% if order['status'] == 'entregado' %}bg-primary{% else %}bg-gray-300{% endif %} rounded-full h-10 w-10 flex items-center justify-center z-10">
-                  {% if order['status'] == 'entregado' %}
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  {% else %}
-                  <span class="text-white font-medium">4</span>
-                  {% endif %}
-                </div>
-                <div class="ml-4">
-                  <h3 class="font-medium">Entregado</h3>
-                  <p class="text-sm text-gray-600">Tu pedido ha sido entregado.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Acción para cancelar (si está pendiente) -->
-        {% if order['status'] == 'pendiente' %}
-        <div class="mb-6">
-          <form action="{{ url_for('cancel_order') }}" method="post" onsubmit="return confirm('¿Estás seguro de cancelar este pedido?')">
-            <input type="hidden" name="order_id" value="{{ order['order_id'] }}">
-            <button type="submit" class="bg-red-500 text-white py-2 px-6 rounded-lg font-medium hover:bg-red-600">Cancelar Pedido</button>
+            <button type="submit" class="btn btn-primary w-full sm:w-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Enviar Evaluación
+            </button>
           </form>
-        </div>
-        {% endif %}
-
-        {% if order['status'] == 'en camino' %}
-        <a href="{{ url_for('cliente_mapa', order_id=order['order_id']) }}" class="btn btn-primary">
-          <i class="fas fa-map-marker-alt"></i> Seguir en mapa
-        </a>
-        {% endif %}
-
-        <!-- Acción final -->
-        <div class="mt-8 flex justify-end">
-          <a href="{{ url_for('client_orders') }}" class="mr-4 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Volver a Mis Pedidos</a>
-          {% if order['status'] == 'entregado' %}
-          <a href="{{ url_for('cliente_dashboard') }}" class="py-2 px-4 bg-primary text-white rounded-lg hover:bg-primary-dark">Comprar de Nuevo</a>
           {% endif %}
+        </div>
+        
+        {% endif %}
+
+        <!-- Action Buttons Section - Elegantly Organized -->
+        <div class="mt-8 border-t pt-5">
+          <div class="flex flex-col sm:flex-row gap-4">
+            <!-- Action buttons based on order status -->
+            <div class="flex flex-col sm:flex-row gap-3 w-full order-2 sm:order-1">              
+              <a href="{{ url_for('client_orders') }}" class="btn btn-outline w-full sm:w-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Volver a Mis Pedidos
+              </a>
+              {% if order['status'] == 'pendiente' %}
+                <form action="{{ url_for('cancel_order') }}" method="post" onsubmit="return confirm('¿Estás seguro de cancelar este pedido?')" class="w-full sm:w-auto">
+                  <input type="hidden" name="order_id" value="{{ order['order_id'] }}">
+                  <button type="submit" class="btn btn-danger w-full sm:w-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Cancelar Pedido
+                  </button>
+                </form>
+              {% endif %}
+              
+              {% if order['status'] == 'en camino' %}
+                <a href="{{ url_for('client_map', order_id=order['order_id']) }}" class="btn btn-primary w-full sm:w-auto">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Seguir en mapa
+                </a>
+              {% endif %}
+
+              <!-- Shop Again button if delivered -->
+            {% if order['status'] == 'entregado' %}
+            <div class="order-1 sm:order-2 w-full sm:w-auto sm:ml-auto">
+              <a href="{{ url_for('cliente_dashboard') }}" class="btn btn-primary w-full flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Comprar de Nuevo
+              </a>
+            </div>
+            {% endif %}
+            </div>
+            
+            
+          </div>
         </div>
       </div>
     </div>
   </div>
+</main>
 {% endblock %}
 {% block scripts %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const socket = io('/client');
-      socket.on('connect', function() {
-        console.log('Conectado al servidor de Socket.IO');
-      });
-      socket.on('order_status_update', function(data) {
-        if (data.order_id == {{ order['order_id'] }} && data.client_id == {{ session.get('user_id') }}) {
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // --- Helpers ---
+    const qs = (sel) => document.querySelector(sel);
+    const qsa = (sel) => Array.from(document.querySelectorAll(sel));
+
+    // Actualiza todos los elementos de estado a "Entregado" y oculta botones
+    function actualizarUIEntregado() {
+      const badge = qs('.bg-white.text-\\[\\#F49A13\\]');
+      if (badge) badge.textContent = 'Entregado';
+
+      qsa('.grid.grid-cols-1.md\\:grid-cols-2 p.font-medium')
+        .filter(el => el.previousElementSibling?.textContent.includes('Estado:'))
+        .forEach(el => el.textContent = 'Entregado');
+
+      const actions = qs('.flex.gap-3.order-1.sm\\:order-2');
+      if (actions) actions.style.display = 'none';
+    }
+
+    // Mostrar alerta uniforme
+    function showAlert(message, isError = false) {
+      alert(message);
+      if (isError) console.error(message);
+    }
+
+    // --- Marcar como entregado ---
+    window.marcarEntregado = (orderId) => {
+      console.log('Marcando pedido:', orderId);
+      fetch(`/marcar_entregado/${orderId}`, {
+        method: 'POST',
+        headers: { 
+          'X-Requested-With': 'XMLHttpRequest', 
+          'Content-Type': 'application/json' 
+        }
+      })
+      .then(res => res.json())
+      .then(({ success, message }) => {
+        if (success) {
+          actualizarUIEntregado();
+          showAlert(message || '¡Pedido marcado como entregado!');
+        } else {
+          showAlert(message || 'Error al marcar como entregado', true);
+        }
+      })
+      .catch(err => showAlert('Error de conexión', true));
+    };
+
+    // --- Socket.IO ---
+    if (typeof io !== 'undefined') {
+      const clientSocket = io('/client');
+      clientSocket.on('connect', () => console.log('Conectado a /client'));
+      clientSocket.on('order_status_update', data => {
+        if (data.order_id === ORDER_ID && data.client_id === CLIENT_ID) {
           window.location.reload();
         }
       });
+
+      const motorizadoSocket = io('/motorizado');
+      motorizadoSocket.on('order_delivered', data => {
+        if (data.order_id === ORDER_ID) {
+          actualizarUIEntregado();
+        }
+      });
+    }
+
+    // --- Rating de estrellas ---
+    const ratingTexts = ['Muy malo','Malo','Regular','Bueno','Excelente'];
+    const ratingInputs = qsa('input[name="rating"]');
+    const ratingTextEl = qs('.rating-text');
+    let selectedRating = 5;
+
+    function pintarEstrellas(rating) {
+      qsa('.rating-group label').forEach((label, idx) => {
+        label.classList.toggle('text-yellow-400', idx < rating);
+        label.classList.toggle('text-gray-300', idx >= rating);
+      });
+    }
+
+    // Eventos change
+    ratingInputs.forEach(input => {
+      input.addEventListener('change', () => {
+        selectedRating = +input.value;
+        if (ratingTextEl) ratingTextEl.textContent = ratingTexts[selectedRating - 1];
+        pintarEstrellas(selectedRating);
+      });
     });
-  </script>
+
+    // Hover
+    qsa('.rating-group label').forEach((label, idx) => {
+      label.addEventListener('mouseenter', () => {
+        if (ratingTextEl) ratingTextEl.textContent = ratingTexts[idx];
+        pintarEstrellas(idx + 1);
+      });
+      label.addEventListener('mouseleave', () => {
+        if (ratingTextEl) ratingTextEl.textContent = ratingTexts[selectedRating - 1];
+        pintarEstrellas(selectedRating);
+      });
+    });
+
+    // Inicialización
+    pintarEstrellas(selectedRating);
+    if (ratingTextEl) ratingTextEl.textContent = ratingTexts[selectedRating - 1];
+  });
+</script>
 {% endblock %}
