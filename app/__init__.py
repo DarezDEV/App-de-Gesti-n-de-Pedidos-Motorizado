@@ -2,7 +2,6 @@
 from flask import Flask, render_template, request, session, redirect, url_for, make_response
 from flask_socketio import SocketIO, emit, join_room
 from app.db import get_db_connection
-from app.location_api import location_api, register_socketio_events
 import os
 import time
 
@@ -32,20 +31,12 @@ app.config['VAPID_PUBLIC_KEY'] = 'LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WU
 app.config['VAPID_PRIVATE_KEY'] = 'LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR0hBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJHMHdhd0lCQVFRZzhZSW5Od3RtNENuY1FhUGYKbjBhYndycTRxSmNkSFl0VmtzWTdBVZzhZSW5Od3RtNENuY1FhUGYKbjBhYndycTRxSmNkSFl0VmtzWTdBVEowMC9paFJBTkNBQVJadTZuRXpUakdxZ1dpblkwZUNPbDlSL2tBREpZNQp6aM2SmpjTnFFNXltaWgrUwotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0W1aOTdzdVJMaEZMNVJWbEtVOGZ5clk1bmdWOVJXSHhhSEs3dW1UV3M2SmpjTnFFNXltaWgrUwotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tCg=='  # Reemplaza con tu clave privada VAPID
 app.config['VAPID_CLAIMS'] = {'sub': 'dawaryramirezmontero@gmail.com'}  # Reemplaza con tu correo
 
-
 # Set UPLOAD_FOLDER
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static/uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Caché en memoria para reducir consultas a la base de datos
-location_cache = {} 
-DB_UPDATE_INTERVAL = 1.0
-
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
-
-app.register_blueprint(location_api, url_prefix='/api')
-register_socketio_events(socketio)
 
 @socketio.on('connect', namespace='/admin')
 def admin_connect():
@@ -82,6 +73,7 @@ from app.routes.motorizado import MotorizadoController
 from app.routes.service import UserService, FileService
 from app.routes.auth import AuthController, AuthService, EmailService
 from app.IA.recommendation_service import Url_recommendation
+from app.location_api import LocationController
 
 # Inicializar extensiones
 bcrypt.init_app(app)
@@ -98,6 +90,7 @@ admin_controller = AdminController(dashboard_service, user_service, file_service
 client_controller = ClientController()
 motorizado_controller = MotorizadoController()
 cart_controller = CartController()
+location_controller = LocationController()
 
 # Configuración de Google OAuth Blueprint
 from flask_dance.contrib.google import make_google_blueprint, google
@@ -113,6 +106,9 @@ google_bp = make_google_blueprint(
 )
 
 app.register_blueprint(google_bp, url_prefix="/google")
+
+# Inicializar LocationController
+location_controller.init_app(app, socketio)
 
 # Rutas de Autenticación
 app.add_url_rule('/auth/register', view_func=auth_controller.register, methods=['GET', 'POST'])
@@ -167,6 +163,8 @@ app.add_url_rule('/track-view', view_func=cart_controller.track_view, methods=['
 app.add_url_rule('/dashboard/cliente/categoria/<int:category_id>', view_func=client_controller.client_category_products)
 app.add_url_rule('/dashboard/cliente/ordenes/orden/map/<int:order_id>', view_func=client_controller.client_map, methods=['GET'])
 app.add_url_rule('/submit_evaluation/<int:order_id>', view_func=client_controller.submit_evaluation_moto, methods=['POST'])
+app.add_url_rule('/cliente/confirmar-entrega', view_func=client_controller.confirmar_entrega_cliente, methods=['POST'])
+
 
 # Rutas de Motorizado
 app.add_url_rule('/dashboard/motorizado/ordenes', view_func=motorizado_controller.motorizado_pedidos)

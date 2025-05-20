@@ -677,6 +677,130 @@
     {% block content %}
     {% endblock %}
 
+    <!-- Footer -->
+    <footer class="bg-gray-100 text-gray-600 mt-12">
+        <!-- Onda decorativa superior -->
+        <div class="w-full">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 48" class="w-full" preserveAspectRatio="none">
+                <path fill="#F49A13" fill-opacity="0.2" d="M0,0L48,5.3C96,11,192,21,288,21.3C384,21,480,11,576,10.7C672,11,768,21,864,32C960,43,1056,53,1152,48C1248,43,1344,21,1392,10.7L1440,0L1440,48L1392,48C1344,48,1248,48,1152,48C1056,48,960,48,864,48C768,48,672,48,576,48C480,48,384,48,288,48C192,48,96,48,48,48L0,48Z"></path>
+            </svg>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Sección principal del footer -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Logo y descripción -->
+                <div class="md:col-span-1">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <img src="{{ url_for('static', filename='img/logo.png')}}" alt="logo" class="h-10 w-10 object-cover">
+                        <span class="text-xl font-bold text-[#F49A13] bg-clip-text">MotoRush</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-4">
+                        Calidad y rapidez en cada entrega, a solo un clic de distancia.
+                    </p>
+                    <div class="flex space-x-4 mt-2">
+                        <a href="#" class="text-gray-500 hover:text-[#F49A13] transition-colors">
+                            <i class="fab fa-facebook-f text-lg"></i>
+                        </a>
+                        <a href="#" class="text-gray-500 hover:text-[#F49A13] transition-colors">
+                            <i class="fab fa-instagram text-lg"></i>
+                        </a>
+                        <a href="#" class="text-gray-500 hover:text-[#F49A13] transition-colors">
+                            <i class="fab fa-twitter text-lg"></i>
+                        </a>
+                        <a href="#" class="text-gray-500 hover:text-[#F49A13] transition-colors">
+                            <i class="fab fa-whatsapp text-lg"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Enlaces rápidos -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Enlaces Rápidos</h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="{{ url_for('cliente_dashboard') }}" class="text-gray-500 hover:text-[#F49A13] transition-colors">Inicio</a>
+                        </li>
+                        <li>
+                            <a href="#" class="text-gray-500 hover:text-[#F49A13] transition-colors">Categorías</a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('client_orders') }}" class="text-gray-500 hover:text-[#F49A13] transition-colors">Mis Pedidos</a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('cart_client')}}" class="text-gray-500 hover:text-[#F49A13] transition-colors">Mi Carrito</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Soporte -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Soporte</h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="#" class="text-gray-500 hover:text-[#F49A13] transition-colors">Centro de Ayuda</a>
+                        </li>
+                        <li>
+                            <a href="#" class="text-gray-500 hover:text-[#F49A13] transition-colors">Preguntas Frecuentes</a>
+                        </li>
+                        <li>
+                            <a href="#" class="text-gray-500 hover:text-[#F49A13] transition-colors">Términos y Condiciones</a>
+                        </li>
+                        <li>
+                            <a href="#" class="text-gray-500 hover:text-[#F49A13] transition-colors">Política de Privacidad</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Contacto -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Contacto</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-map-marker-alt text-[#F49A13] mt-1 mr-2"></i>
+                            <span class="text-gray-500">123 Calle Principal, Ciudad</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-phone text-[#F49A13] mr-2"></i>
+                            <span class="text-gray-500">+1 (829) 972-5977</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope text-[#F49A13] mr-2"></i>
+                            <span class="text-gray-500">motorush5@gmail.com</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-clock text-[#F49A13] mr-2"></i>
+                            <span class="text-gray-500">Lun-Vie: 9AM - 6PM</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Línea separadora -->
+            <div class="border-t border-gray-200 mt-8 pt-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <!-- Copyright -->
+                    <p class="text-sm text-gray-500 mb-4 md:mb-0">
+                        &copy; 2025 MotoRush. Todos los derechos reservados.
+                    </p>
+                    
+                    <!-- Métodos de pago -->
+                    <div class="flex space-x-4 hidden">
+                        <span class="text-gray-400 text-xl"><i class="fab fa-cc-visa"></i></span>
+                        <span class="text-gray-400 text-xl"><i class="fab fa-cc-mastercard"></i></span>
+                        <span class="text-gray-400 text-xl"><i class="fab fa-cc-paypal"></i></span>
+                        <span class="text-gray-400 text-xl"><i class="fab fa-cc-amex"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Botón de regreso arriba -->
+    <button id="back-to-top" class="fixed bottom-4 right-4 bg-[#F49A13] text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg opacity-0 invisible transition-all duration-300 hover:bg-[#D88000]">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
 
     <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js')}}"></script>
@@ -860,6 +984,26 @@
                 alert('Error al actualizar el perfil');
             });
         });
+
+         // Script para el botón de regreso arriba
+    const backToTopButton = document.getElementById('back-to-top');
+    
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 300) {
+            backToTopButton.classList.remove('opacity-0', 'invisible');
+            backToTopButton.classList.add('opacity-100', 'visible');
+        } else {
+            backToTopButton.classList.add('opacity-0', 'invisible');
+            backToTopButton.classList.remove('opacity-100', 'visible');
+        }
+    });
+    
+    backToTopButton.addEventListener('click', () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
     </script>
 
     {% block scripts %}

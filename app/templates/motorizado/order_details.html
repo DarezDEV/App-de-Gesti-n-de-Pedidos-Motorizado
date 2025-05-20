@@ -23,15 +23,12 @@
   </nav>
   <div class="container mx-auto px-4 sm:px-6 py-2">
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-      <!-- Header -->
       <div class="bg-[#F49A13] p-4 flex justify-between items-center">
         <h1 class="text-white text-xl font-bold">Pedido #{{ order['order_id'] }}</h1>
-        <span class="bg-white text-[#F49A13] px-3 py-1 rounded-full font-semibold">{{ order['status']|capitalize }}</span>
+        <span id="status-badge" class="bg-white text-[#F49A13] px-3 py-1 rounded-full font-semibold">{{ order['status']|capitalize }}</span>
       </div>
 
-      <!-- Contenido principal -->
       <div class="p-6">
-        <!-- Información del pedido -->
         <div class="mb-6">
           <h2 class="text-lg font-semibold mb-3 border-b pb-2">Información del Pedido</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -49,12 +46,31 @@
             </div>
             <div>
               <p class="text-gray-600 mb-1">Estado:</p>
-              <p class="font-medium">{{ order['status']|capitalize }}</p>
+              <p id="status-text" class="font-medium">{{ order['status']|capitalize }}</p>
             </div>
+            {% if order['status'] == 'en camino' %}
+            <div>
+              <p class="text-gray-600 mb-1">Confirmación:</p>
+              <div class="flex items-center gap-2">
+                <span class="flex items-center {% if order.get('motorizado_confirm_delivery') %}text-green-500{% else %}text-gray-400{% endif %}">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span id="confirmacion-motorizado">Motorizado: {% if order.get('motorizado_confirm_delivery') %}Confirmado{% else %}Pendiente{% endif %}</span>
+                </span>
+                <span class="mx-2">|</span>
+                <span class="flex items-center {% if order.get('client_confirm_delivery') %}text-green-500{% else %}text-gray-400{% endif %}">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span id="confirmacion-cliente">Cliente: {% if order.get('client_confirm_delivery') %}Confirmado{% else %}Pendiente{% endif %}</span>
+                </span>
+              </div>
+            </div>
+            {% endif %}
           </div>
         </div>
 
-        <!-- Productos del pedido -->
         <div class="mb-6">
           <h2 class="text-lg font-semibold mb-3 border-b pb-2">Productos del Pedido</h2>
           {% if order['items'] %}
@@ -98,7 +114,6 @@
           {% endif %}
         </div>
 
-        <!-- Acciones - Botones organizados elegantemente -->
         <div class="mt-8 border-t pt-5">
           <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex gap-3 order-2 sm:order-1">
@@ -111,19 +126,28 @@
             </div>
 
             {% if order['status'] == 'en camino' %}
-            <div class="flex gap-3 order-1 sm:order-2 w-full sm:w-auto">
+            <div id="action-buttons" class="flex gap-3 order-1 sm:order-2 w-full sm:w-auto">
               <a href="{{ url_for('motorizado_map', order_id=order['order_id']) }}" class="py-2 px-4 border border-[#F49A13] rounded-lg text-[#F49A13] hover:bg-amber-50 transition flex items-center justify-center flex-1 sm:flex-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                 </svg>
                 Ver en mapa
               </a>
-              <button onclick="marcarEntregado({{ order.order_id }})" class="bg-[#F49A13] text-white py-2 px-4 rounded-lg hover:bg-amber-600 transition flex items-center justify-center flex-1 sm:flex-auto">
+              {% if not order.get('motorizado_confirm_delivery') %}
+              <button id="btn-confirmar" onclick="marcarEntregado({{ order.order_id }})" class="bg-[#F49A13] text-white py-2 px-4 rounded-lg hover:bg-amber-600 transition flex items-center justify-center flex-1 sm:flex-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
-                Marcar como Entregado
+                Confirmar Entrega
               </button>
+              {% else %}
+              <button disabled class="bg-gray-300 text-gray-600 py-2 px-4 rounded-lg flex items-center justify-center flex-1 sm:flex-auto cursor-not-allowed">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Entrega Confirmada
+              </button>
+              {% endif %}
             </div>
             {% endif %}
           </div>
@@ -134,105 +158,173 @@
 </main>
 {% endblock %}
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-  function showNotification(title, message, type) {
-    const notification = document.createElement('div');
-    notification.setAttribute('role', 'alert');
-    notification.id = 'flash';
+  document.addEventListener('DOMContentLoaded', function() {
+    const ORDER_ID = {{ order['order_id'] }};
+    const MOTORIZADO_ID = {{ session.get('user_id', 0) }};
 
-    if (type === 'error') {
-      notification.className = 'flash-message slide-in';
-      notification.innerHTML = `
-        <svg class="flash-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 1 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
-        </svg>
-        <div class="message-container">
-          <span class="message">Advertencia:</span> ${message}
-        </div>
-        <button onclick="closeFlash()" class="flash-close">×</button>
-      `;
-    } else if (type === 'success') {
-      notification.className = 'flash-message-success slide-in';
-      notification.innerHTML = `
-        <svg class="flash-icon-success" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10 0.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 0.5ZM8.293 10.293a1 1 0 0 1 1.414 0L10 10.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414Z"/>
-        </svg>
-        <div class="message-container-success">
-          <span class="message-success">Éxito:</span> ${message}
-        </div>
-        <button onclick="closeFlash()" class="flash-close-success">×</button>
-      `;
-    } else {
-      notification.className = 'flash-message slide-in';
-      notification.innerHTML = `
-        <div class="message-container">
-          <span class="message"><strong>${title}:</strong></span> ${message}
-        </div>
-        <button onclick="closeFlash()" class="flash-close">×</button>
-      `;
-    }
-    const notificationsContainer = document.getElementById('notifications') || document.body;
-    notificationsContainer.appendChild(notification);
-
-    setTimeout(() => {
-      notification.classList.add('slide-out');
-      notification.addEventListener('transitionend', () => {
-        notification.remove();
-      });
-    }, 3000);
-  }
-
-  function closeFlash() {
-    const notification = document.getElementById('flash');
-    if (notification) {
-      notification.classList.add('slide-out');
-      notification.addEventListener('transitionend', () => {
-        notification.remove();
+    function showNotification(title, message, type) {
+      Swal.fire({
+        title: title,
+        text: message,
+        icon: type,
+        confirmButtonColor: '#F49A13',
+        confirmButtonText: 'Aceptar'
       });
     }
-  }
 
-  function marcarEntregado(orderId) {
-    fetch(`/marcar_entregado/${orderId}`, {
-      method: 'POST',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Content-Type': 'application/json'
+    function closeFlash() {
+      const notification = document.getElementById('flash');
+      if (notification) {
+        notification.classList.add('slide-out');
+        notification.addEventListener('transitionend', () => {
+          notification.remove();
+        });
       }
-    })
-      .then(response => {
-        // Verificar si la respuesta es válida
-        if (!response.ok) {
-          throw new Error(`Error HTTP: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data.success) {
-          // Actualizar el estado en la página
-          const statusElement = document.querySelector('.bg-white.text-\\[\\#F49A13\\]');
-          if (statusElement) {
-            statusElement.textContent = 'Entregado';
+    }
+
+    function marcarEntregado(orderId) {
+      Swal.fire({
+        title: '¿Confirmar entrega?',
+        text: '¿Confirmas que has entregado este pedido?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#F49A13',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, confirmar',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const btnConfirmar = document.getElementById('btn-confirmar');
+          if (btnConfirmar) {
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = `
+              <svg class="animate-spin h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Procesando...
+            `;
           }
 
-          // Ocultar botones de acción
-          const actionButtons = document.querySelector('.order-1.sm\\:order-2');
-          if (actionButtons) {
-            actionButtons.style.display = 'none';
-          }
+          fetch(`/marcar_entregado/${orderId}`, {
+            method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Error HTTP: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              const motorizadoConfirm = document.getElementById('confirmacion-motorizado');
+              if (motorizadoConfirm) {
+                motorizadoConfirm.innerHTML = 'Motorizado: Confirmado';
+                motorizadoConfirm.parentElement.classList.remove('text-gray-400');
+                motorizadoConfirm.parentElement.classList.add('text-green-500');
+              }
 
-          // Mostrar notificación de éxito
-          showNotification('Éxito', 'Pedido marcado como entregado correctamente.', 'success');
-        } else {
-          // Mostrar notificación de error
-          showNotification('Error', data.message || 'No se pudo marcar como entregado.', 'error');
+              const btnConfirmar = document.getElementById('btn-confirmar');
+              if (btnConfirmar) {
+                btnConfirmar.outerHTML = `
+                  <button disabled class="bg-gray-300 text-gray-600 py-2 px-4 rounded-lg flex items-center justify-center flex-1 sm:flex-auto cursor-not-allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Entrega Confirmada
+                  </button>
+                `;
+              }
+
+              if (data.fully_delivered) {
+                const statusBadge = document.getElementById('status-badge');
+                const statusText = document.getElementById('status-text');
+                if (statusBadge) statusBadge.textContent = 'Entregado';
+                if (statusText) statusText.textContent = 'Entregado';
+
+                const actionButtons = document.getElementById('action-buttons');
+                if (actionButtons) actionButtons.style.display = 'none';
+              }
+
+              showNotification('Éxito', data.message, 'success');
+            } else {
+              showNotification('Error', data.message || 'No se pudo marcar como entregado.', 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error', 'Error de conexión al servidor. Por favor, intenta de nuevo.', 'error');
+          });
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        // Mostrar notificación de error en lugar de alert
-        showNotification('Error', 'Error de conexión al servidor. Por favor, intenta de nuevo.', 'error');
       });
-  }
+    }
+
+    if (typeof io !== 'undefined') {
+      const socket = io('/motorizado');
+
+      socket.on('connect', function() {
+        console.log('Conectado a socket.io');
+      });
+
+      socket.on('delivery_confirmed_by_client', (data) => {
+        if (data.order_id == ORDER_ID) {
+          showNotification('Cliente ha confirmado', `${data.cliente_name} marcó como entregado, solo faltas tú.`, 'info');
+          const clienteConfirm = document.getElementById('confirmacion-cliente');
+          if (clienteConfirm) {
+            clienteConfirm.innerHTML = 'Cliente: Confirmado';
+            clienteConfirm.parentElement.classList.remove('text-gray-400');
+            clienteConfirm.parentElement.classList.add('text-green-500');
+          }
+        }
+      });
+
+      socket.on('order_delivered', (data) => {
+        if (data.order_id == ORDER_ID) {
+          const statusBadge = document.getElementById('status-badge');
+          const statusText = document.getElementById('status-text');
+          if (statusBadge) statusBadge.textContent = 'Entregado';
+          if (statusText) statusText.textContent = 'Entregado';
+
+          const actionButtons = document.getElementById('action-buttons');
+          if (actionButtons) actionButtons.style.display = 'none';
+
+          showNotification('Éxito', 'El pedido ha sido marcado como entregado por ambas partes.', 'success');
+        }
+      });
+
+      socket.on('order_status_update', function(data) {
+        if (data.order_id == ORDER_ID) {
+          console.log('Actualización recibida:', data);
+
+          if (data.client_confirmed) {
+            const clienteConfirm = document.getElementById('confirmacion-cliente');
+            if (clienteConfirm) {
+              clienteConfirm.innerHTML = 'Cliente: Confirmado';
+              clienteConfirm.parentElement.classList.remove('text-gray-400');
+              clienteConfirm.parentElement.classList.add('text-green-500');
+            }
+          }
+
+          if (data.status === 'entregado') {
+            const statusBadge = document.getElementById('status-badge');
+            const statusText = document.getElementById('status-text');
+            if (statusBadge) statusBadge.textContent = 'Entregado';
+            if (statusText) statusText.textContent = 'Entregado';
+
+            const actionButtons = document.getElementById('action-buttons');
+            if (actionButtons) actionButtons.style.display = 'none';
+
+            showNotification('Éxito', 'Pedido completado y marcado como entregado', 'success');
+          }
+        }
+      });
+    }
+  });
 </script>
 {% endblock %}

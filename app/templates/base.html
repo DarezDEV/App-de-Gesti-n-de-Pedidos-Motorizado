@@ -284,77 +284,598 @@
     </div>
  </aside>
  {% endif %}
+ <!-- Resto del código (modal de perfil, etc.) permanece sin cambios -->
+ <div id="profileModal" class="fixed inset-0 z-[1000] hidden overflow-y-auto">
+   <div class="flex min-h-screen items-center justify-center px-4">
+       <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" id="profileModalOverlay"></div>
+       <div class="relative max-w-2xl w-full bg-white rounded-xl shadow-lg overflow-hidden transform transition-all">
+           <button id="closeProfileModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 focus:outline-none">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+               </svg>
+           </button>
+           <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+               <div class="h-40 bg-wave"></div>
+               <div class="flex flex-col items-center px-4 relative">
+                   <div class="flex justify-center mb-4">
+                       <label for="profile-image"
+                           class="relative w-32 h-32 rounded-full border-4 border-[#F49A13] cursor-pointer hover:border-[#FFB44D] transition-all group -mt-16">
+                           <input type="file" id="profile-image" name="profile_image" accept="image/*"
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                           <img id="profile-pic"
+                               src="{{ url_for('static', filename='Uploads/' + session['user_photo']) }}"
+                               alt="Profile Picture" class="w-full h-full object-cover rounded-full" />
+                           <div
+                               class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 text-white rounded-full">
+                               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                               </svg>
+                           </div>
+                       </label>
+                   </div>
+                   <div class="mb-4 text-center">
+                       <h1 id="profile-name" class="text-2xl font-bold text-gray-800">{{ session['user_name'] }} {{ session['user_last_name'] }}</h1>
+                       <p id="profile-email" class="text-gray-500 mt-1">{{ session['user_gmail'] }}</p>
+                       <div class="mt-6 flex space-x-3 justify-center">
+                           <button id="edit-profile-btn" class="px-4 py-2 bg-[#F49A13] text-white rounded-lg hover:bg-[#D88000] transition-all shadow-md">
+                               Editar Perfil
+                           </button>
+                           <a href="{{ url_for('change_password') }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-opacity-90 transition-all shadow-md">
+                               Cambiar Contraseña
+                           </a>
+                       </div>
+                   </div>
+                   <div id="edit-form" class="edit-form w-full mb-6">
+                       <form id="edit-profile-form" class="w-full max-w-lg mx-auto mt-6">
+                           <div class="flex flex-col gap-6 border-t border-gray-200 pt-4">
+                               <h2 class="text-lg font-semibold text-gray-700 mb-4">Editar Información Personal</h2>
+                               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                   <label class="input_from relative">
+                                       <input type="text" autocomplete="off"
+                                              name="name"
+                                              value="{{ session['user_name'] }}"
+                                              placeholder="" 
+                                              class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                                              />
+                                       <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                                           Nombre
+                                       </span>
+                                   </label>
+                                   <label class="input_from relative">
+                                       <input type="text" autocomplete="off"
+                                              name="last_name"
+                                              value="{{ session['user_last_name'] }}"
+                                              placeholder="" 
+                                              class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                                              />
+                                       <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                                           Apellido
+                                       </span>
+                                   </label>
+                               </div>
+                               <label class="input_from relative">
+                                   <input type="email"
+                                          autocomplete="off"
+                                          name="gmail"
+                                          value="{{ session['user_gmail'] }}"
+                                          placeholder="" 
+                                          class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                                          />
+                                   <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                                       Gmail
+                                   </span>
+                               </label>
+                               <div id="verification-section" class="flex flex-col gap-4">
+                                   <label class="input_from relative">
+                                       <input type="text"
+                                              autocomplete="off"
+                                              name="verification_code"
+                                              placeholder=""
+                                              class="peer h-8 w-full border-none bg-transparent p-0 placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+                                              />
+                                       <span class="absolute left-0 top-2 -translate-y-1/2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-xs">
+                                           Código de Verificación
+                                       </span>
+                                   </label>
+                                   <button type="button" id="resend-code-btn" class="text-sm text-[#F49A13] hover:underline">
+                                       Reenviar Código
+                                   </button>
+                               </div>
+                               <div class="flex justify-end mt-6">
+                                   <button type="button" id="cancel-btn" class="mr-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-all">
+                                       Cancelar
+                                   </button>
+                                   <button type="submit" class="px-4 py-2 bg-[#F49A13] text-white rounded-lg hover:bg-[#D88000] transition-all shadow-md">
+                                       Guardar Cambios
+                                   </button>
+                               </div>
+                           </div>
+                       </form>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+</div>
  
 {% block content %}
 {% endblock %}
+   
     
-   <script src="{{ url_for('static', filename='js/script.js')}}"></script>
-   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
-   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
-   <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js')}}"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+<script>
+ // Enhanced profile modal functionality
+document.addEventListener('DOMContentLoaded', function() {
+   // Define elements
+   const profileButton = document.getElementById('profile-button');
+   const dropdownUser = document.getElementById('dropdown-user');
+   const openProfileModalBtn = document.getElementById('open-profile-modal');
+   const profileModal = document.getElementById('profileModal');
+   const closeProfileModalBtn = document.getElementById('closeProfileModal');
+   const profileModalOverlay = document.getElementById('profileModalOverlay');
+   const editProfileBtn = document.getElementById('edit-profile-btn');
+   const editForm = document.getElementById('edit-form');
+   const cancelBtn = document.getElementById('cancel-btn');
+   
+   // Toggle dropdown menu
+   if (profileButton) {
+       profileButton.addEventListener('click', function() {
+           if (dropdownUser) {
+               dropdownUser.classList.toggle('hidden');
+           }
+       });
+       
+       // Close dropdown when clicking outside
+       document.addEventListener('click', function(event) {
+           if (!profileButton.contains(event.target) && !dropdownUser.contains(event.target)) {
+               if (!dropdownUser.classList.contains('hidden')) {
+                   dropdownUser.classList.add('hidden');
+               }
+           }
+       });
+   }
+   
+   // Profile modal functions
+   function openProfileModal() {
+       if (profileModal) {
+           profileModal.classList.remove('hidden');
+           
+           // Add a short delay to allow the DOM to update before adding animation classes
+           setTimeout(() => {
+               if (profileModalOverlay) {
+                   profileModalOverlay.classList.add('opacity-100');
+               }
+               const modalContent = profileModal.querySelector('.transform');
+               if (modalContent) {
+                   modalContent.classList.add('modal-animate-in');
+               }
+           }, 10);
+       }
+   }
+   
+   function closeProfileModal() {
+       if (profileModal) {
+           const modalContent = profileModal.querySelector('.transform');
+           if (modalContent) {
+               modalContent.classList.remove('modal-animate-in');
+               modalContent.classList.add('modal-animate-out');
+           }
+           
+           // Wait for animation to complete before hiding
+           setTimeout(() => {
+               profileModal.classList.add('hidden');
+               if (profileModalOverlay) {
+                   profileModalOverlay.classList.remove('opacity-100');
+               }
+               if (modalContent) {
+                   modalContent.classList.remove('modal-animate-out');
+               }
+           }, 300);
+       }
+   }
+   
+   // Add event listeners for profile modal
+   if (openProfileModalBtn) {
+       openProfileModalBtn.addEventListener('click', function(e) {
+           e.preventDefault();
+           openProfileModal();
+       });
+   }
+   
+   if (closeProfileModalBtn) {
+       closeProfileModalBtn.addEventListener('click', function() {
+           closeProfileModal();
+       });
+   }
+   
+   if (profileModalOverlay) {
+       profileModalOverlay.addEventListener('click', function() {
+           closeProfileModal();
+       });
+   }
+   
+   // Edit form toggle
+   if (editProfileBtn) {
+       editProfileBtn.addEventListener('click', function() {
+           if (editForm) {
+               editForm.classList.toggle('active');
+           }
+       });
+   }
+   
+   if (cancelBtn) {
+       cancelBtn.addEventListener('click', function() {
+           if (editForm) {
+               editForm.classList.remove('active');
+           }
+       });
+   }
+   
+   // Profile picture upload
+   const profileImage = document.getElementById('profile-image');
+   if (profileImage) {
+       profileImage.addEventListener('change', function(event) {
+           const file = event.target.files[0];
+           if (file) {
+               const reader = new FileReader();
+               reader.onload = function(e) {
+                   const profilePic = document.getElementById('profile-pic');
+                   if (profilePic) {
+                       profilePic.src = e.target.result;
+                   }
+               };
+               reader.readAsDataURL(file);
+               
+               // Upload to server
+               const formData = new FormData();
+               formData.append('photo', file);
+               
+               // Show loading spinner
+               const loadingSpinner = document.getElementById('loading-spinner');
+               if (loadingSpinner) {
+                   loadingSpinner.classList.remove('hidden');
+               }
+               
+               fetch('/update_profile_photo', {
+                   method: 'POST',
+                   body: formData
+               })
+               .then(response => response.json())
+               .then(data => {
+                   // Hide loading spinner
+                   if (loadingSpinner) {
+                       loadingSpinner.classList.add('hidden');
+                   }
+                   
+                   if (data.success) {
+                       // Update profile pictures with cache-busting
+                       const timestamp = new Date().getTime();
+                       const basePath = '/static/Uploads/';
+                       const newSrc = basePath + data.filename + '?t=' + timestamp;
+                       
+                       // Update all profile images
+                       const profilePic = document.getElementById('profile-pic');
+                       const navbarProfilePic = document.querySelector('nav img[alt="Foto de perfil"]');
+                       
+                       if (profilePic) {
+                           profilePic.src = newSrc;
+                       }
+                       
+                       if (navbarProfilePic) {
+                           navbarProfilePic.src = newSrc;
+                       }
+                       
+                       // Show success message
+                       Swal.fire({
+                           icon: 'success',
+                           title: 'Éxito',
+                           text: 'Foto de perfil actualizada correctamente',
+                           confirmButtonColor: '#F49A13'
+                       });
+                   } else {
+                       // Show error message
+                       Swal.fire({
+                           icon: 'error',
+                           title: 'Error',
+                           text: data.message || 'Error al actualizar la foto de perfil',
+                           confirmButtonColor: '#F49A13'
+                       });
+                   }
+               })
+               .catch(error => {
+                   // Hide loading spinner
+                   if (loadingSpinner) {
+                       loadingSpinner.classList.add('hidden');
+                   }
+                   
+                   console.error('Error:', error);
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Error',
+                       text: 'Error al actualizar la foto de perfil',
+                       confirmButtonColor: '#F49A13'
+                   });
+               });
+           }
+       });
+   }
+   
+   // Email verification
+   const emailInput = document.querySelector('input[name="gmail"]');
+   const verificationSection = document.getElementById('verification-section');
+   
+   if (emailInput && verificationSection) {
+       // Store original email
+       if (!emailInput.dataset.original) {
+           emailInput.dataset.original = emailInput.value;
+       }
+       
+       emailInput.addEventListener('change', function() {
+           if (this.value !== emailInput.dataset.original && this.value) {
+               // Request email verification
+               fetch('/request_email_verification', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ new_email: this.value })
+               })
+               .then(response => response.json())
+               .then(data => {
+                   if (data.success) {
+                       verificationSection.style.display = 'block';
+                       Swal.fire({
+                           icon: 'info',
+                           title: 'Verificación requerida',
+                           text: 'Se ha enviado un código de verificación a tu nuevo correo',
+                           confirmButtonColor: '#F49A13'
+                       });
+                   } else {
+                       Swal.fire({
+                           icon: 'error',
+                           title: 'Error',
+                           text: data.message || 'Error al enviar el código de verificación',
+                           confirmButtonColor: '#F49A13'
+                       });
+                   }
+               })
+               .catch(error => {
+                   console.error('Error:', error);
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Error',
+                       text: 'Error al solicitar verificación de correo',
+                       confirmButtonColor: '#F49A13'
+                   });
+               });
+           } else {
+               verificationSection.style.display = 'none';
+           }
+       });
+   }
+   
+   // Resend verification code
+   const resendCodeBtn = document.getElementById('resend-code-btn');
+   if (resendCodeBtn && emailInput) {
+       resendCodeBtn.addEventListener('click', function() {
+           fetch('/request_email_verification', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ new_email: emailInput.value })
+           })
+           .then(response => response.json())
+           .then(data => {
+               if (data.success) {
+                   Swal.fire({
+                       icon: 'success',
+                       title: 'Código reenviado',
+                       text: 'Se ha enviado un nuevo código de verificación',
+                       confirmButtonColor: '#F49A13'
+                   });
+               } else {
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Error',
+                       text: data.message || 'Error al reenviar el código',
+                       confirmButtonColor: '#F49A13'
+                   });
+               }
+           })
+           .catch(error => {
+               console.error('Error:', error);
+               Swal.fire({
+                   icon: 'error',
+                   title: 'Error',
+                   text: 'Error al reenviar el código de verificación',
+                   confirmButtonColor: '#F49A13'
+               });
+           });
+       });
+   }
+   
+   // Form submission
+   const editProfileForm = document.getElementById('edit-profile-form');
+   if (editProfileForm) {
+       editProfileForm.addEventListener('submit', function(e) {
+           e.preventDefault();
+           
+           // Show loading spinner
+           const loadingSpinner = document.getElementById('loading-spinner');
+           if (loadingSpinner) {
+               loadingSpinner.classList.remove('hidden');
+           }
+           
+           const formData = new FormData(this);
+           
+           fetch('/update_profile', {
+               method: 'POST',
+               body: formData
+           })
+           .then(response => response.json())
+           .then(data => {
+               // Hide loading spinner
+               if (loadingSpinner) {
+                   loadingSpinner.classList.add('hidden');
+               }
+               
+               if (data.success) {
+                   // Update profile information
+                   const profileName = document.getElementById('profile-name');
+                   const profileEmail = document.getElementById('profile-email');
+                   
+                   if (profileName) {
+                       profileName.textContent = data.user.name + ' ' + data.user.last_name;
+                   }
+                   
+                   if (profileEmail) {
+                       profileEmail.textContent = data.user.gmail;
+                   }
+                   
+                   // Hide edit form
+                   if (editForm) {
+                       editForm.classList.remove('active');
+                   }
+                   
+                   // Hide verification section
+                   if (verificationSection) {
+                       verificationSection.style.display = 'none';
+                   }
+                   
+                   // Update original email
+                   if (emailInput) {
+                       emailInput.dataset.original = data.user.gmail;
+                   }
+                   
+                   // Show success message
+                   Swal.fire({
+                       icon: 'success',
+                       title: 'Éxito',
+                       text: 'Perfil actualizado correctamente',
+                       confirmButtonColor: '#F49A13'
+                   });
+               } else {
+                   // Show error message
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Error',
+                       text: data.message || 'Error al actualizar el perfil',
+                       confirmButtonColor: '#F49A13'
+                   });
+               }
+           })
+           .catch(error => {
+               // Hide loading spinner
+               if (loadingSpinner) {
+                   loadingSpinner.classList.add('hidden');
+               }
+               
+               console.error('Error:', error);
+               Swal.fire({
+                   icon: 'error',
+                   title: 'Error',
+                   text: 'Error al actualizar el perfil',
+                   confirmButtonColor: '#F49A13'
+               });
+           });
+       });
+   }
+   
+   // Handle ESC key to close modal
+   document.addEventListener('keydown', function(event) {
+       if (event.key === 'Escape' && !profileModal.classList.contains('hidden')) {
+           closeProfileModal();
+       }
+   });
+   
+   // Check if mobile profile button exists (this was mentioned in the HTML but might be missing)
+   const mobileProfileBtn = document.getElementById('mobile-profile-btn');
+   if (mobileProfileBtn) {
+       mobileProfileBtn.addEventListener('click', function(e) {
+           e.preventDefault();
+           openProfileModal();
+       });
+   }
+});
 
-   {% if session.get('user_role') == 'admin' %}
-   <script src="{{ url_for('static', filename='js/admin_orders.js') }}"></script>
-   <script>
-      const socket = io('/admin');
+   // Script para el botón de regreso arriba
+const backToTopButton = document.getElementById('back-to-top');
 
-      function updatePendingOrdersCount(count) {
-         const badge = document.getElementById('pending-orders-badge');
-         if (badge) {
-            badge.textContent = count !== undefined ? count : localStorage.getItem('pendingOrdersCount') || '0';
-            badge.style.display = badge.textContent > 0 ? 'inline-flex' : 'none';
-         }
+window.addEventListener('scroll', () => {
+  if (window.pageYOffset > 300) {
+      backToTopButton.classList.remove('opacity-0', 'invisible');
+      backToTopButton.classList.add('opacity-100', 'visible');
+  } else {
+      backToTopButton.classList.add('opacity-0', 'invisible');
+      backToTopButton.classList.remove('opacity-100', 'visible');
+  }
+});
+
+</script>
+
+{% if session.get('user_role') == 'admin' %}
+<script src="{{ url_for('static', filename='js/admin_orders.js') }}"></script>
+<script>
+   const socket = io('/admin');
+
+   function updatePendingOrdersCount(count) {
+      const badge = document.getElementById('pending-orders-badge');
+      if (badge) {
+         badge.textContent = count !== undefined ? count : localStorage.getItem('pendingOrdersCount') || '0';
+         badge.style.display = badge.textContent > 0 ? 'inline-flex' : 'none';
       }
+   }
 
-      socket.on('new_order', function(order) {
-         if (order.status === 'pendiente') {
-            let currentCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0');
-            currentCount += 1;
-            localStorage.setItem('pendingOrdersCount', currentCount.toString());
-            updatePendingOrdersCount(currentCount);
-         }
-      });
-
-      socket.on('order_status_update', function(order) {
+   socket.on('new_order', function(order) {
+      if (order.status === 'pendiente') {
          let currentCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0');
-         if (order.status !== 'pendiente' && currentCount > 0) {
-            currentCount -= 1;
-            localStorage.setItem('pendingOrdersCount', currentCount.toString());
-            updatePendingOrdersCount(currentCount);
+         currentCount += 1;
+         localStorage.setItem('pendingOrdersCount', currentCount.toString());
+         updatePendingOrdersCount(currentCount);
+      }
+   });
+
+   socket.on('order_status_update', function(order) {
+      let currentCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0');
+      if (order.status !== 'pendiente' && currentCount > 0) {
+         currentCount -= 1;
+         localStorage.setItem('pendingOrdersCount', currentCount.toString());
+         updatePendingOrdersCount(currentCount);
+      }
+   });
+
+   window.addEventListener('load', function() {
+      const initialCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0');
+      updatePendingOrdersCount(initialCount);
+   });
+
+   
+</script>
+{% else %}
+<script src="{{ url_for('static', filename='js/motorizado_orders.js') }}"></script>
+<script>
+   // Inicializar socket.io
+   function initSocket() {
+   socket = io();
+   
+   // Escuchar eventos de actualización de ubicación
+   socket.on('location_update_' + currentOrderId, function(data) {
+         console.log('Recibida actualización de ubicación:', data);
+         updateMapMarkers(data);
+   });
+   
+   // Resto del código de socket...
+   socket.on('order_status_update', function(data) {
+         if (data.order_id == currentOrderId) {
+            const orderStatusElement = document.getElementById('orderStatus');
+            
          }
-      });
-
-      window.addEventListener('load', function() {
-         const initialCount = parseInt(localStorage.getItem('pendingOrdersCount') || '0');
-         updatePendingOrdersCount(initialCount);
-      });
-
-      
-   </script>
-   {% else %}
-   <script src="{{ url_for('static', filename='js/motorizado_orders.js') }}"></script>
-   <script>
-    // Inicializar socket.io
-    function initSocket() {
-      socket = io();
-      
-      // Escuchar eventos de actualización de ubicación
-      socket.on('location_update_' + currentOrderId, function(data) {
-          console.log('Recibida actualización de ubicación:', data);
-          updateMapMarkers(data);
-      });
-      
-      // Resto del código de socket...
-      socket.on('order_status_update', function(data) {
-          if (data.order_id == currentOrderId) {
-              const orderStatusElement = document.getElementById('orderStatus');
-             
-          }
-      });
-  }    
-   </script>
-   {% endif %}
+   });
+}    
+</script>
+{% endif %}
 
 {% block scripts %}
 {% endblock %}

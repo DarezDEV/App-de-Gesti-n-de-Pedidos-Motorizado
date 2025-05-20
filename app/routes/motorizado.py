@@ -48,10 +48,10 @@ class MotorizadoController:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Obtener la información básica del pedido
         cursor.execute("""
             SELECT o.id AS order_id, o.total_amount, o.created_at, o.status,
-                   a.address, CONCAT(u.name, ' ', u.last_name) AS client_name
+                   a.address, CONCAT(u.name, ' ', u.last_name) AS client_name,
+                   o.motorizado_confirm_delivery, o.client_confirm_delivery
             FROM orders o
             JOIN addresses a ON o.address_id = a.id
             JOIN users u ON o.user_id = u.id
@@ -59,18 +59,15 @@ class MotorizadoController:
         """, (order_id, user_id))
         order = cursor.fetchone()
 
-        # Si no se encuentra el pedido o no está asignado al motorizado
         if not order:
             flash('Pedido no encontrado o no asignado a ti', 'error')
             cursor.close()
             conn.close()
             return redirect(url_for('motorizado_pedidos'))
 
-        # Formatear la fecha y el monto
         order['created_at'] = order['created_at'].strftime('%d/%m/%Y')
         order['total_amount'] = float(order['total_amount'])
 
-        # Obtener los ítems del pedido
         cursor.execute("""
             SELECT oi.product_id, oi.quantity, oi.price, p.name, p.image
             FROM order_items oi
@@ -96,7 +93,7 @@ class MotorizadoController:
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute(
-                "SELECT status, total_amount, created_at, address_id FROM orders WHERE id = %s AND motorizado_id = %s",
+                "SELECT status, total_amount, created_at, address_id, client_confirm_delivery, user_id AS client_id FROM orders WHERE id = %s AND motorizado_id = %s",
                 (order_id, user_id)
             )
             order = cursor.fetchone()
@@ -104,23 +101,71 @@ class MotorizadoController:
                 return jsonify({'success': False, 'message': 'Pedido no encontrado o no asignado a este motorizado'}), 404
             if order['status'] != 'en camino':
                 return jsonify({'success': False, 'message': 'El pedido no está en estado "en camino"'}), 400
-            cursor.execute("UPDATE orders SET status = 'entregado', updated_at = NOW() WHERE id = %s", (order_id,))
-            cursor.execute("UPDATE users SET status = 'disponible' WHERE id = %s", (user_id,))
+
+            cursor.execute("UPDATE orders SET motorizado_confirm_delivery = TRUE, updated_at = NOW() WHERE id = %s", (order_id,))
+
+            cursor.execute("SELECT name, last_name FROM users WHERE id = %s", (user_id,))
+            motorizado = cursor.fetchone()
+            motorizado_name = f"{motorizado['name']} {motorizado['last_name']}"
+
+            cursor.execute("SELECT name, last_name FROM users WHERE id = %s", (order['client_id'],))
+            cliente = cursor.fetchone()
+            cliente_name = f"{cliente['name']} {cliente['last_name']}"
+
+            if order['client_confirm_delivery']:
+                cursor.execute("UPDATE orders SET status = 'entregado', updated_at = NOW() WHERE id = %s", (order_id,))
+                cursor.execute("UPDATE users SET status = 'disponible' WHERE id = %s", (user_id,))
+                fully_delivered = True
+            else:
+                fully_delivered = False
+
             conn.commit()
+
             cursor.execute("SELECT address FROM addresses WHERE id = %s", (order['address_id'],))
             address_record = cursor.fetchone()
             address = address_record['address'] if address_record else "Sin dirección"
+
+            cursor.execute("SELECT status FROM orders WHERE id = %s", (order_id,))
+            current_status = cursor.fetchone()['status']
+
             order_details = {
                 'order_id': order_id,
-                'status': 'entregado',
+                'status': current_status,
+                'motorizado_confirmed': True,
+                'client_confirmed': order['client_confirm_delivery'],
                 'total_amount': float(order['total_amount']),
                 'created_at': order['created_at'].strftime('%d/%m/%Y'),
-                'address': address
+                'address': address,
+                'motorizado_name': motorizado_name,
+                'cliente_name': cliente_name
             }
+
             socketio.emit('order_status_update', order_details, namespace='/admin')
-            socketio.emit('order_status_update', order_details, namespace='/client')
-            socketio.emit('order_delivered', order_details, namespace='/motorizado')
-            return jsonify({'success': True, 'message': 'Pedido marcado como entregado'}), 200
+            socketio.motorizado_controller.marcar_entregado in motorizado.pyocketio.emit('order_status_update', order_details, namespace='/client')
+            socketio.emit('order_delivery_confirmation', order_details, namespace='/motorizado')
+
+            if not fully_delivered:
+                socketio.emit('delivery_confirmed_by_motorizado', {
+                    'order_id': order_id,
+                    'motorizado_name': motorizado_name
+                }, namespace='/client', room=f'client_{order["client_id"]}')
+
+                socketio.emit('delivery_confirmed_by_motorizado', {
+                    'order_id': order_id,
+                    'motorizado_name': motorizado_name,
+                    'cliente_name': cliente_name
+                }, namespace='/admin')
+            else:
+                socketio.emit('order_delivered', order_details, namespace='/admin')
+                socketio.emit('order_delivered', order_details, namespace='/client', room=f'client_{order["client_id"]}')
+                socketio.emit('order_delivered', order_details, namespace='/motorizado', room=f'motorizado_{user_id}')
+
+            return jsonify({
+                'success': True,
+                'message': 'Has confirmado la entrega del pedido',
+                'status': current_status,
+                'fully_delivered': fully_delivered
+            }), 200
         except Exception as e:
             conn.rollback()
             return jsonify({'success': False, 'message': f'Error al marcar el pedido: {str(e)}'}), 500

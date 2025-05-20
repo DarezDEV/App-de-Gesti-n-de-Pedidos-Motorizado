@@ -157,6 +157,8 @@ CREATE TABLE orders (
     client_longitude DECIMAL(11, 8),
     motorizado_latitude DECIMAL(10, 8),
     motorizado_longitude DECIMAL(11, 8),
+    client_confirm_delivery BOOLEAN DEFAULT FALSE,
+    motorizado_confirm_delivery BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (address_id) REFERENCES addresses(id),
     CONSTRAINT fk_motorizado FOREIGN KEY (motorizado_id) REFERENCES users(id)
