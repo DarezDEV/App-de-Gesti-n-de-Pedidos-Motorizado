@@ -27,8 +27,14 @@
       color: white;
     }
     
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
       background-color: #e08a03;
+    }
+    
+    .btn-primary:disabled {
+      background-color: #d1d5db;
+      color: #6b7280;
+      cursor: not-allowed;
     }
     
     .btn-outline {
@@ -124,7 +130,7 @@
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
       <div class="bg-primary p-4 flex justify-between items-center">
         <h1 class="text-white text-xl font-bold">Mi Pedido #{{ order['order_id'] }}</h1>
-        <span class="bg-white text-primary px-3 py-1 rounded-full font-semibold">{{ order['status']|capitalize }}</span>
+        <span id="status-badge" class="bg-white text-primary px-3 py-1 rounded-full font-semibold">{{ order['status']|capitalize }}</span>
       </div>
 
       <div class="p-6">
@@ -141,12 +147,32 @@
             </div>
             <div>
               <p class="text-gray-600 mb-1">Estado:</p>
-              <p class="font-medium">{{ order['status']|capitalize }}</p>
+              <p id="status-text" class="font-medium">{{ order['status']|capitalize }}</p>
             </div>
             <div>
               <p class="text-gray-600 mb-1">Método de pago:</p>
               <p class="font-medium">Efectivo</p>
             </div>
+            {% if order['status'] == 'en camino' %}
+            <div>
+              <p class="text-gray-600 mb-1">Confirmación:</p>
+              <div class="flex items-center gap-2">
+                <span class="flex items-center {% if order.get('motorizado_confirm_delivery') %}text-green-500{% else %}text-gray-400{% endif %}">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span id="confirmacion-motorizado">Motorizado: {% if order.get('motorizado_confirm_delivery') %}Confirmado{% else %}Pendiente{% endif %}</span>
+                </span>
+                <span class="mx-2">|</span>
+                <span class="flex items-center {% if order.get('client_confirm_delivery') %}text-green-500{% else %}text-gray-400{% endif %}">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span id="confirmacion-cliente">Cliente: {% if order.get('client_confirm_delivery') %}Confirmado{% else %}Pendiente{% endif %}</span>
+                </span>
+              </div>
+            </div>
+            {% endif %}
           </div>
         </div>
 
@@ -206,11 +232,15 @@
             </div>
           </div>
           <div class="mt-4">
-            <button type="button" id="confirmDeliveryBtn" class="btn btn-primary w-full sm:w-auto">
+            <button type="button" id="confirmDeliveryBtn" class="btn btn-primary w-full sm:w-auto" {% if not order.get('motorizado_confirm_delivery') %}disabled{% endif %}>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              Confirmar Recepción del Pedido
+              {% if order.get('motorizado_confirm_delivery') %}
+                Confirmar Recepción del Pedido
+              {% else %}
+                Esperando confirmación del motorizado
+              {% endif %}
             </button>
           </div>
         </div>
@@ -316,32 +346,17 @@
 </main>
 {% endblock %}
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const ORDER_ID = "{{ order['order_id'] }}";
     const CLIENT_ID = "{{ session.get('user_id', '') }}";
 
+    // Funciones auxiliares
     const qs = (sel) => document.querySelector(sel);
     const qsa = (sel) => Array.from(document.querySelectorAll(sel));
 
-    function actualizarUIEntregado() {
-      const badge = qs('.bg-white.text-primary');
-      if (badge) badge.textContent = 'Entregado';
-
-      qsa('.grid.grid-cols-1.md\\:grid-cols-2 p.font-medium')
-        .filter(el => el.previousElementSibling?.textContent.includes('Estado:'))
-        .forEach(el => el.textContent = 'Entregado');
-
-      const confirmSection = qs('#confirmationSection');
-      if (confirmSection) confirmSection.style.display = 'none';
-
-      showSweetAlert('¡Éxito!', '¡Pedido marcado como entregado exitosamente!', 'success');
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    }
-
+    // Función para mostrar notificaciones con SweetAlert
     function showSweetAlert(title, message, icon) {
       Swal.fire({
         title: title,
@@ -357,8 +372,69 @@
       });
     }
 
+    // Función para actualizar la UI cuando el pedido está entregado
+    function actualizarUIEntregado() {
+      const badge = qs('#status-badge');
+      if (badge) badge.textContent = 'Entregado';
+
+      const statusText = qs('#status-text');
+      if (statusText) statusText.textContent = 'Entregado';
+
+      const confirmSection = qs('#confirmationSection');
+      if (confirmSection) confirmSection.style.display = 'none';
+
+      showSweetAlert('¡Éxito!', '¡Pedido marcado como entregado exitosamente!', 'success');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    }
+
+    // Actualizar UI cuando el motorizado confirma entrega
+    function actualizarUIMotorizadoConfirmado() {
+      const motorizadoConfirm = qs('#confirmacion-motorizado');
+      if (motorizadoConfirm) {
+        motorizadoConfirm.innerHTML = 'Motorizado: Confirmado';
+        motorizadoConfirm.parentElement.classList.remove('text-gray-400');
+        motorizadoConfirm.parentElement.classList.add('text-green-500');
+      }
+
+      const confirmBtn = qs('#confirmDeliveryBtn');
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          Confirmar Recepción del Pedido
+        `;
+      }
+    }
+
+    // Actualizar UI cuando el cliente confirma entrega
+    function actualizarUIClienteConfirmado() {
+      const clienteConfirm = qs('#confirmacion-cliente');
+      if (clienteConfirm) {
+        clienteConfirm.innerHTML = 'Cliente: Confirmado';
+        clienteConfirm.parentElement.classList.remove('text-gray-400');
+        clienteConfirm.parentElement.classList.add('text-green-500');
+      }
+
+      const confirmBtn = qs('#confirmDeliveryBtn');
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          Entrega Confirmada
+        `;
+      }
+    }
+
+    // Evento del botón de confirmar entrega
     const confirmBtn = qs('#confirmDeliveryBtn');
-    if (confirmBtn) {
+    if (confirmBtn && !confirmBtn.disabled) {
       confirmBtn.addEventListener('click', () => {
         Swal.fire({
           title: '¿Confirmar entrega?',
@@ -391,17 +467,12 @@
             .then(res => res.json())
             .then(data => {
               if (data.success) {
+                actualizarUIClienteConfirmado();
+                
                 if (data.fully_delivered) {
                   actualizarUIEntregado();
                 } else {
-                  showSweetAlert('Confirmado', 'Has confirmado la recepción. Esperando confirmación del repartidor...', 'success');
-                  confirmBtn.disabled = true;
-                  confirmBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Entrega Confirmada
-                  `;
+                  showSweetAlert('Confirmado', 'Has confirmado la recepción. Esperando confirmación del repartidor si aún no lo ha hecho.', 'success');
                 }
               } else {
                 confirmBtn.disabled = false;
@@ -429,88 +500,115 @@
       });
     }
 
+    // Configuración de Socket.IO
     if (typeof io !== 'undefined') {
       try {
-        const clientSocket = io('/client');
-        clientSocket.on('connect', () => console.log('Conectado a /client'));
+        const socket = io('/client');
+        
+        socket.on('connect', () => {
+          console.log('Cliente conectado a socket.io con ID:', socket.id);
+          
+          // Registrarse para recibir actualizaciones de este pedido
+          socket.emit('register_for_order_updates', {
+            order_id: ORDER_ID,
+            client_id: CLIENT_ID
+          });
+        });
 
-        clientSocket.on('delivery_confirmed_by_motorizado', (data) => {
+        // Evento cuando el motorizado confirma la entrega
+        socket.on('delivery_confirmed_by_motorizado', (data) => {
+          console.log('Recibido delivery_confirmed_by_motorizado:', data);
           if (data.order_id === ORDER_ID) {
-            showSweetAlert('Motorizado ha confirmado', `${data.motorizado_name} marcó como entregado, solo faltas tú.`, 'info');
+            showSweetAlert('Motorizado ha confirmado', 'El motorizado ha confirmado la entrega, ahora puedes confirmar la recepción.', 'info');
+            actualizarUIMotorizadoConfirmado();
           }
         });
 
-        clientSocket.on('order_delivered', (data) => {
+        // Evento cuando el pedido se marca completamente como entregado
+        socket.on('order_fully_delivered', (data) => {
+          console.log('Recibido order_fully_delivered:', data);
           if (data.order_id === ORDER_ID) {
             actualizarUIEntregado();
           }
         });
 
-        clientSocket.on('order_status_update', data => {
-          if (data.order_id === ORDER_ID && data.client_id === CLIENT_ID) {
-            if (data.status === 'entregado') {
-              actualizarUIEntregado();
-            } else {
-              window.location.reload();
+        // Evento cuando se actualiza el estado del pedido
+        socket.on('order_status_updated', (data) => {
+          console.log('Recibido order_status_updated:', data);
+          if (data.order_id === ORDER_ID) {
+            const badge = qs('#status-badge');
+            if (badge) badge.textContent = data.new_status.charAt(0).toUpperCase() + data.new_status.slice(1);
+
+            const statusText = qs('#status-text');
+            if (statusText) statusText.textContent = data.new_status.charAt(0).toUpperCase() + data.new_status.slice(1);
+
+            // Si el pedido pasó a "en camino" y no existía la sección de confirmación, recargar página
+            if (data.new_status === 'en camino') {
+              showSweetAlert('Pedido en camino', 'Tu pedido está en camino. Puedes seguirlo en el mapa.', 'info');
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
             }
           }
         });
-      } catch (err) {
-        console.warn("Socket.IO no disponible:", err);
+
+        socket.on('order_delivered', (data) => {
+          console.log('Recibido order_delivered:', data);
+          if (data.order_id === ORDER_ID) {
+            actualizarUIEntregado();
+          }
+        });
+
+        socket.on('disconnect', () => {
+          console.log('Desconectado de socket.io');
+        });
+
+      } catch (error) {
+        console.error('Error al configurar socket.io:', error);
       }
     }
 
-    const ratingTexts = ['Muy malo','Malo','Regular','Bueno','Excelente'];
-    const ratingInputs = qsa('input[name="rating"]');
-    const ratingTextEl = qs('.rating-text');
-    let selectedRating = 5;
+    // Verificación periódica del estado del pedido
+    setInterval(() => {
+      fetch(`/cliente/check-delivery-status/${ORDER_ID}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log('Estado del pedido:', data);
+        if (data.success) {
+          if (data.motorizado_confirmed) {
+            actualizarUIMotorizadoConfirmado();
+          }
+          if (data.status === 'entregado') {
+            actualizarUIEntregado();
+          }
+        }
+      })
+      .catch(err => console.error('Error al verificar estado:', err));
+    }, 5000); // Cada 5 segundos
 
-    function pintarEstrellas(rating) {
-      qsa('.rating-group label').forEach((label, idx) => {
-        label.classList.toggle('text-yellow-400', idx < rating);
-        label.classList.toggle('text-gray-300', idx >= rating);
-      });
-    }
+    // Configuración para la calificación de estrellas
+    const ratingInputs = qsa('input[name="rating"]');
+    const ratingText = qs('.rating-text');
+    
+    const ratingTexts = {
+      1: 'Muy malo',
+      2: 'Malo',
+      3: 'Regular',
+      4: 'Bueno',
+      5: 'Excelente'
+    };
 
     ratingInputs.forEach(input => {
       input.addEventListener('change', () => {
-        selectedRating = +input.value;
-        if (ratingTextEl) ratingTextEl.textContent = ratingTexts[selectedRating - 1];
-        pintarEstrellas(selectedRating);
+        const rating = parseInt(input.value);
+        ratingText.textContent = ratingTexts[rating] || '';
       });
     });
-
-    qsa('.rating-group label').forEach((label, idx) => {
-      label.addEventListener('mouseenter', () => {
-        if (ratingTextEl) ratingTextEl.textContent = ratingTexts[idx];
-        pintarEstrellas(idx + 1);
-      });
-      label.addEventListener('mouseleave', () => {
-        if (ratingTextEl) ratingTextEl.textContent = ratingTexts[selectedRating - 1];
-        pintarEstrellas(selectedRating);
-      });
-    });
-
-    pintarEstrellas(selectedRating);
-    if (ratingTextEl) ratingTextEl.textContent = ratingTexts[selectedRating - 1];
-
-    document.head.insertAdjacentHTML('beforeend', `
-      <style>
-        .swal-custom-popup {
-          border-radius: 0.5rem;
-        }
-        .swal-custom-title {
-          color: #4B5563;
-        }
-        .swal-custom-confirm-button {
-          background-color: #F49A13 !important;
-          box-shadow: 0 2px 4px rgba(244, 154, 19, 0.3) !important;
-        }
-        .swal-custom-confirm-button:hover {
-          background-color: #e08a03 !important;
-        }
-      </style>
-    `);
   });
 </script>
 {% endblock %}

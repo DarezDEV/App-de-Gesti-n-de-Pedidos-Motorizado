@@ -197,7 +197,8 @@ class ClientController:
 
         cursor.execute("""
             SELECT o.id AS order_id, o.total_amount, o.created_at, o.status,
-                a.address, m.name AS motorizado_name, m.last_name AS motorizado_last_name
+                a.address, m.name AS motorizado_name, m.last_name AS motorizado_last_name,
+                o.motorizado_confirm_delivery, o.client_confirm_delivery
             FROM orders o
             JOIN addresses a ON o.address_id = a.id
             LEFT JOIN users m ON o.motorizado_id = m.id
@@ -223,7 +224,7 @@ class ClientController:
         order['items'] = cursor.fetchall()
 
         cursor.execute("""
-            SELECT rating FROM evaluations
+            SELECT rating, comment FROM evaluations
             WHERE order_id = %s AND user_id = %s
         """, (order_id, user_id))
         evaluation = cursor.fetchone()
@@ -270,97 +271,6 @@ class ClientController:
             conn.close()
 
         return redirect(url_for('order_details_client', order_id=order_id))
-
-    def product_detail(self, product_id):
-        if self.check_cliente_permission():
-            return self.check_cliente_permission()
-
-        user_id = session.get('user_id')
-        RecommendationAIService.track_product_view(user_id, product_id)
-
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute("SELECT id, name, description, image_path AS image FROM categories")
-        categories = cursor.fetchall()
-
-        cursor.execute("""
-            SELECT p.*, c.name AS category_name
-            FROM products p
-            LEFT JOIN categories c ON p.category_id = c.id
-            WHERE p.id = %s
-        """, (product_id,))
-        product = cursor.fetchone()
-        if not product:
-            flash('Producto no encontrado', 'error')
-            return redirect(url_for('cliente_dashboard'))
-
-        if 'price' in product and isinstance(product['price'], Decimal):
-            crossed_price = (product['price'] * Decimal('1.2')).quantize(Decimal('0.01'))
-            product['crossed_price'] = crossed_price
-        else:
-            product['crossed_price'] = None
-
-        cursor.execute("""
-            SELECT pe.rating, pe.comment, pe.created_at, CONCAT(u.name, ' ', u.last_name) AS user_name
-            FROM product_evaluations pe
-            JOIN users u ON pe.user_id = u.id
-            WHERE pe.product_id = %s
-            ORDER BY pe.created_at DESC
-        """, (product_id,))
-        reviews = cursor.fetchall()
-
-        cursor.execute("""
-            SELECT AVG(rating) as avg_rating, COUNT(*) as review_count
-            FROM product_evaluations
-            WHERE product_id = %s
-        """, (product_id,))
-        rating_info = cursor.fetchone()
-        avg_rating = round(float(rating_info['avg_rating']), 1) if rating_info['avg_rating'] else 0
-        review_count = rating_info['review_count']
-
-        rec_service = RecommendationAIService()
-        personalized_recommendations = rec_service.get_recommendations_for_user(user_id)
-        product_data = rec_service.get_product_data()
-        content_scores = rec_service.compute_content_based_similarity(product_id, product_data)
-        similar_product_ids = sorted(content_scores.items(), key=lambda x: x[1], reverse=True)[:4]
-
-        ids = [pid for pid, _ in similar_product_ids]
-        if ids:
-            placeholders = ', '.join(['%s'] * len(ids))
-            sql_similar = f"SELECT * FROM products WHERE id IN ({placeholders}) AND estado = %s"
-            params = ids + [1]
-            cursor.execute(sql_similar, params)
-            similar_products = cursor.fetchall()
-        else:
-            similar_products = []
-
-        recommended_products = []
-        seen = {product_id}
-        for p in personalized_recommendations + similar_products:
-            if p['id'] not in seen:
-                recommended_products.append(p)
-                seen.add(p['id'])
-            if len(recommended_products) >= 12:
-                break
-
-        cart_items = CartService.get_cart_items(user_id)
-        cart_count = sum(item['quantity'] for item in cart_items)
-
-        cursor.close()
-        conn.close()
-
-        return render_template(
-            'client/product_detail.html',
-            categories=categories,
-            product=product,
-            user=DashboardService.get_user_info(),
-            recommended_products=recommended_products,
-            cart_count=cart_count,
-            reviews=reviews,
-            avg_rating=avg_rating,
-            review_count=review_count
-        )
 
     def submit_product_evaluation(self):
         if not session.get('user_id'):
@@ -557,10 +467,11 @@ class ClientController:
 
         try:
             cursor.execute("""
-                SELECT o.status, o.total_amount, o.created_at, o.address_id, o.motorizado_confirm_delivery, o.motorizado_id,
-                    a.address, CONCAT(m.name, ' ', m.last_name) AS motorizado_name
+                SELECT o.id AS order_id, o.total_amount, o.created_at, o.status,
+                    a.address, m.name AS motorizado_name, m.last_name AS motorizado_last_name,
+                    o.motorizado_confirm_delivery, o.client_confirm_delivery, o.motorizado_id
                 FROM orders o
-                LEFT JOIN addresses a ON o.address_id = a.id
+                JOIN addresses a ON o.address_id = a.id
                 LEFT JOIN users m ON o.motorizado_id = m.id
                 WHERE o.id = %s AND o.user_id = %s
             """, (order_id, user_id))
@@ -579,13 +490,12 @@ class ClientController:
             cliente = cursor.fetchone()
             cliente_name = f"{cliente['name']} {cliente['last_name']}"
 
+            fully_delivered = False
             if order['motorizado_confirm_delivery']:
                 cursor.execute("UPDATE orders SET status = 'entregado', updated_at = NOW() WHERE id = %s", (order_id,))
-                if order['motorizado_id']:
+                if order['motorizado_id']:  # Verificar si hay motorizado asignado
                     cursor.execute("UPDATE users SET status = 'disponible' WHERE id = %s", (order['motorizado_id'],))
                 fully_delivered = True
-            else:
-                fully_delivered = False
 
             conn.commit()
 
@@ -609,21 +519,20 @@ class ClientController:
             socketio.emit('order_status_update', order_details, namespace='/motorizado')
 
             if not fully_delivered:
-                if order['motorizado_id']:
+                if order['motorizado_id']:  # Solo emitir si hay motorizado asignado
                     socketio.emit('delivery_confirmed_by_client', {
                         'order_id': order_id,
                         'cliente_name': cliente_name
                     }, namespace='/motorizado', room=f'motorizado_{order["motorizado_id"]}')
-
                 socketio.emit('delivery_confirmed_by_client', {
                     'order_id': order_id,
                     'cliente_name': cliente_name,
-                    'motorizado_name': order['motorizado_name']
+                    'motorizado_name': order['motorizado_name'] or 'No asignado'
                 }, namespace='/admin')
             else:
                 socketio.emit('order_delivered', order_details, namespace='/admin')
                 socketio.emit('order_delivered', order_details, namespace='/client', room=f'client_{user_id}')
-                if order['motorizado_id']:
+                if order['motorizado_id']:  # Solo emitir si hay motorizado asignado
                     socketio.emit('order_delivered', order_details, namespace='/motorizado', room=f'motorizado_{order["motorizado_id"]}')
 
             return jsonify({
@@ -640,6 +549,31 @@ class ClientController:
         finally:
             cursor.close()
             conn.close()
+
+    def check_delivery_status(self, order_id):
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'message': 'Usuario no autenticado'}), 401
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT motorizado_confirm_delivery, client_confirm_delivery, status
+            FROM orders WHERE id = %s AND user_id = %s
+        """, (order_id, user_id))
+        order = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not order:
+            return jsonify({'success': False, 'message': 'Pedido no encontrado'}), 404
+
+        return jsonify({
+            'success': True,
+            'motorizado_confirmed': order['motorizado_confirm_delivery'],
+            'client_confirmed': order['client_confirm_delivery'],
+            'status': order['status']
+        }), 200
 
 class CartController:
     @staticmethod

@@ -141,7 +141,7 @@ class MotorizadoController:
             }
 
             socketio.emit('order_status_update', order_details, namespace='/admin')
-            socketio.motorizado_controller.marcar_entregado in motorizado.pyocketio.emit('order_status_update', order_details, namespace='/client')
+            socketio.emit('order_status_update', order_details, namespace='/client')
             socketio.emit('order_delivery_confirmation', order_details, namespace='/motorizado')
 
             if not fully_delivered:
